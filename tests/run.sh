@@ -29,6 +29,20 @@ HOME=/tmp/maidhelp-t bash "$PKGDIR/install.sh" --check >/dev/null 2>&1 || fail "
 [ -e /tmp/maidhelp-t/.local/bin/maid-helper ] && fail "dry run wrote files"
 ok "installer dry run clean"
 
+echo "== installer covers every module =="
+rm -rf /tmp/maidhelp-i; mkdir -p /tmp/maidhelp-i
+HOME=/tmp/maidhelp-i bash "$PKGDIR/install.sh" --no-packages </dev/null >/dev/null 2>&1 || fail "fake install crashed"
+for f in "$PKGDIR"/bin/mod-*.sh; do
+  b=$(basename "$f")
+  cmp -s "$f" "/tmp/maidhelp-i/.local/bin/$b" || fail "not installed: $b"
+done
+[ -x /tmp/maidhelp-i/.local/bin/maid-helper ] || fail "dispatcher not executable"
+[ -f /tmp/maidhelp-i/.local/share/applications/maid-helper.desktop ] || fail "desktop entry missing"
+HOME=/tmp/maidhelp-i bash "$PKGDIR/install.sh" --uninstall --purge </dev/null >/dev/null 2>&1 || fail "fake uninstall crashed"
+[ -e /tmp/maidhelp-i/.local/bin/maid-helper ] && fail "uninstall left files"
+rm -rf /tmp/maidhelp-i
+ok "installer covers every module + uninstall"
+
 echo "== dispatcher: check reports, unknown rejected =="
 export PATH="$STUBS:/usr/bin:/bin"
 export HOME=/tmp/maidhelp-t

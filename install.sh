@@ -36,7 +36,8 @@ if [ "$UNINST" = "1" ]; then
   # --prefix/DESTDIR installs uninstall cleanly too.
   rm -f "$BINDIR"/maid-helper "$BINDIR"/lib.sh \
     "$BINDIR"/mod-codecs.sh "$BINDIR"/mod-gpu.sh \
-    "$BINDIR"/mod-print.sh "$BINDIR"/mod-fonts.sh "$BINDIR"/mod-suite.sh
+    "$BINDIR"/mod-print.sh "$BINDIR"/mod-fonts.sh "$BINDIR"/mod-suite.sh \
+    "$BINDIR"/mod-gamepad.sh "$BINDIR"/mod-flatpak.sh "$BINDIR"/mod-firmware.sh
   rm -f "$SHAREDIR"/applications/maid-helper.desktop
   if [ "$PURGE" = "1" ]; then
     rm -f "$HOME"/.local/share/maid-helper.log
@@ -126,7 +127,7 @@ copy_one() {
   echo "installed $dest"
 }
 
-for f in maid-helper lib.sh mod-codecs.sh mod-gpu.sh mod-print.sh mod-fonts.sh mod-suite.sh; do
+for f in maid-helper lib.sh mod-codecs.sh mod-gpu.sh mod-print.sh mod-fonts.sh mod-suite.sh mod-gamepad.sh mod-flatpak.sh mod-firmware.sh; do
   copy_one "$PKGDIR/bin/$f" "$BINDIR/$f"
 done
 [ "$CHECK" = "0" ] && chmod +x "$BINDIR"/maid-helper 2>/dev/null || true
