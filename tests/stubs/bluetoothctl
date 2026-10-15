@@ -1,0 +1,5 @@
+#!/bin/bash
+case "$*" in
+  *devices*) [ "${GAMEPAD:-none}" = "bt" ] && echo 'Device AA:BB:CC:DD:EE:FF Xbox Wireless Test Pad' ;;
+esac
+exit 0

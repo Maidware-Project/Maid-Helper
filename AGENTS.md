@@ -24,8 +24,9 @@ like the rest of the suite.
 
 - `bin/maid-helper` dispatcher (`--check` reports, `--fix` applies,
   `--only a,b` selects modules)
-- `bin/mod-*.sh` one doctor module each (codecs, gpu, print, fonts),
-  distro backends auto-detected from `/etc/os-release`
+- `bin/mod-*.sh` one doctor module each (codecs, gpu, print, fonts,
+  suite, gamepad, flatpak, firmware), distro backends auto-detected
+  from `/etc/os-release`
 - `desktop/` launcher, `install.sh` multi-distro installer,
   `tests/` suite + fixtures + stubs
 

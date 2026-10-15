@@ -17,6 +17,7 @@ here="$(cd "$(dirname "$0")" && pwd)"
 MODE="${1:-check}"
 MP_D="${MAID_MODPROBE_D:-/etc/modprobe.d}"
 CMDLINE="${MAID_CMDLINE:-/proc/cmdline}"
+VK_DIR="${MAID_VULKAN_DIR:-/usr/share/vulkan/icd.d}"
 NEED=0
 need() { echo "NEEDS FIX - $1"; NEED=1; }
 
@@ -107,7 +108,7 @@ if [ "$have_amd" = "1" ]; then
       pacman) pkg_present linux-firmware || fw_ok=0 ;;
       apt) pkg_present firmware-amd-graphics || fw_ok=0 ;;
     esac
-    ls /usr/share/vulkan/icd.d/*radeon* /usr/share/vulkan/icd.d/*amd* >/dev/null 2>&1 || vk_ok=0
+    ls "$VK_DIR"/*radeon* "$VK_DIR"/*amd* >/dev/null 2>&1 || vk_ok=0
     if [ "$fw_ok" = "1" ] && [ "$vk_ok" = "1" ]; then
       echo "ok - amdgpu driving AMD GPU, firmware + Vulkan present"
     else
@@ -130,10 +131,9 @@ if [ "$have_amd" = "1" ]; then
     echo "  older cards stay on radeon (fine for desktop, no Vulkan)"
   else
     need "AMD GPU present, no driver bound (driver: ${drv:-none})"
-    [ "$MODE" = "fix" ] || true
   fi
 fi
 
+# rc 2 whenever anything needs attention (including "reboot to finish").
 [ "$NEED" = "0" ] && exit 0
-[ "$MODE" = "fix" ] && exit 2
 exit 2
