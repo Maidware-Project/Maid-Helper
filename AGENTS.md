@@ -32,11 +32,12 @@ like the rest of the suite.
 ## Rules
 
 - Fully open source, FLOSS compliant: MIT code, no proprietary blobs
-  shipped or downloaded by default. Non-free software (NVIDIA drivers,
-  Microsoft fonts) installs only with explicit user consent —
-  interactive prompt on a tty, or a named opt-in env var
-  (`NVIDIA_PROPRIETARY=1`, `MSFONTS=1`). Non-interactive runs without
-  consent print instructions and report NEEDS ATTENTION instead.
+  shipped, downloaded, or installed — ever. The NVIDIA module works
+  the open stack (Nouveau) only and won't print vendor-driver
+  commands either. Microsoft fonts install only with explicit user
+  consent — interactive prompt on a tty, or MSFONTS=1. Non-interactive
+  runs without consent print instructions and report NEEDS ATTENTION
+  instead.
 - No personal data in repo. Installer copies, never symlinks, backs up.
 - `--check` reports, changes nothing. `--fix` is the only path that
   installs anything or restarts anything. Manual steps (reboot, MOK

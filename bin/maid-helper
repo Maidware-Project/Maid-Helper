@@ -22,7 +22,7 @@ for a in "$@"; do
   esac
 done
 
-MODULES="codecs gpu print fonts suite"
+MODULES="codecs gpu print fonts suite gamepad flatpak firmware"
 if [ -n "$ONLY" ]; then
   MODULES=$(echo "$ONLY" | tr ',' ' ')
 fi
@@ -30,7 +30,6 @@ fi
 PM=$(detect_pm)
 [ "$PM" = "none" ] && { echo "unsupported distro (need pacman/apt/dnf/zypper)"; exit 2; }
 export PM BINDIR LOG
-export NVIDIA_PROPRIETARY="${NVIDIA_PROPRIETARY:-0}"
 export MSFONTS="${MSFONTS:-0}"
 
 FAILED=0; NEEDS=0

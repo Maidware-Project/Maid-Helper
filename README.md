@@ -7,9 +7,12 @@ wrong. this checks all four and fixes what it safely can.
 ```
 bin/maid-helper          dispatcher
 bin/mod-codecs.sh        videos/music codecs (ffmpeg, gstreamer, BT audio)
-bin/mod-gpu.sh           NVIDIA driver (proprietary only with consent)
+bin/mod-gpu.sh           NVIDIA on the open Nouveau stack (never proprietary)
 bin/mod-print.sh         CUPS + driverless printers
 bin/mod-fonts.sh         emoji + CJK + MS fonts (MS only with consent)
+bin/mod-gamepad.sh       gamepads (delegates to Maid AU on openSUSE)
+bin/mod-flatpak.sh       flathub remote present
+bin/mod-firmware.sh      fwupd present for firmware updates
 bin/mod-suite.sh         is the rest of the Maid suite whole?
 bin/lib.sh               shared bits (never run directly)
 install.sh               multi-distro installer
@@ -27,9 +30,11 @@ exit codes: `0` healthy/fixed, `2` needs attention, anything else failed.
 
 ## fully open source, floss compliant
 
-MIT, like the rest of the suite. non-free software (NVIDIA drivers,
-Microsoft fonts) installs **only** with your explicit yes — a prompt
-on interactive terminals, or `NVIDIA_PROPRIETARY=1` / `MSFONTS=1`.
+MIT, like the rest of the suite. non-free software never installs
+here, period — no NVIDIA proprietary path exists in this tool (the
+GPU doctor works the open Nouveau stack only). the single exception
+is Microsoft fonts, which install **only** with your explicit yes —
+a prompt on interactive terminals, or `MSFONTS=1`.
 without consent it prints the manual path and reports NEEDS ATTENTION
 instead. patent-encumbered codecs come from the community repos your
 distro already uses for this (Packman, RPM Fusion) — said plainly in

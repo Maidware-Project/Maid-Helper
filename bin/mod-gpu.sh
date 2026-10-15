@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Doctor: NVIDIA GPU (black screen / llvmpipe / Wayland glitches from a
-# missing proprietary driver). Nouveau stays untouched (it is the free
-# fallback). The proprietary driver installs only with explicit consent
-# (tty prompt, or NVIDIA_PROPRIETARY=1) — non-interactive runs without
-# consent print instructions and report NEEDS ATTENTION instead.
-# Reboot + Secure Boot MOK enrollment stay manual, always (printed).
+# Doctor: GPUs on the open stack (Nouveau for NVIDIA, amdgpu for AMD).
+# Maid Helper does not install proprietary drivers, ever — no consent
+# flag, no vendor-driver commands printed either. ROCm/compute is out
+# of scope (gaming/desktop rendering only).
+# NVIDIA: Nouveau in use, nothing blacklisted, no nomodeset.
+# AMD: amdgpu in use, firmware package present, Vulkan ICD present.
+# GCN 1.0/1.1 cards stuck on radeon get printed kernel flags (bootloader
+# edits stay manual, always). Fixes back up what they touch.
+# Test seams: MAID_MODPROBE_D and MAID_CMDLINE override the paths read.
 # Usage: mod-gpu.sh check|fix. rc: 0 healthy/fixed, 2 needs attention.
 set -u
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -12,81 +15,125 @@ here="$(cd "$(dirname "$0")" && pwd)"
 . "$here/lib.sh"
 
 MODE="${1:-check}"
-BRANCH="${NVIDIA_BRANCH:-G06}"
+MP_D="${MAID_MODPROBE_D:-/etc/modprobe.d}"
+CMDLINE="${MAID_CMDLINE:-/proc/cmdline}"
+NEED=0
+need() { echo "NEEDS FIX - $1"; NEED=1; }
 
-if have nvidia-smi && nvidia-smi >/dev/null 2>&1; then
-  nvidia-smi --query-gpu=name,driver_version --format=csv,noheader 2>/dev/null | head -n 1
-  echo "ok - NVIDIA driver loaded"
-  exit 0
-fi
-if have lspci && ! lspci -nn 2>/dev/null | grep -qi nvidia; then
-  echo "ok - no NVIDIA GPU found (nothing to do)"
-  exit 0
-fi
-if ! have lspci; then
-  echo "NEEDS FIX - can't tell (install pciutils to detect GPUs)"
+have_nvidia=0
+have_amd=0
+if have lspci; then
+  lspci -nn 2>/dev/null | grep -qi nvidia && have_nvidia=1
+  lspci -nn 2>/dev/null | grep -Ei "VGA|3D|Display" | grep -qiE "amd|ati|radeon|1002" && have_amd=1
+elif ! have nvidia-smi; then
+  echo "NEEDS FIX - can't tell (pciutils missing, so GPUs are invisible)"
   [ "$MODE" = "fix" ] || exit 2
   ensure_sudo || exit 1
   case "$PM" in
-    zypper) install_pkgs zypper pciutils || true ;;
-    dnf) install_pkgs dnf pciutils || true ;;
-    pacman) install_pkgs pacman pciutils || true ;;
-    apt) install_pkgs apt pciutils || true ;;
+    zypper) install_pkgs zypper pciutils || exit 1 ;;
+    dnf) install_pkgs dnf pciutils || exit 1 ;;
+    pacman) install_pkgs pacman pciutils || exit 1 ;;
+    apt) install_pkgs apt pciutils || exit 1 ;;
+    *) echo "unsupported distro"; exit 1 ;;
   esac
-  lspci -nn 2>/dev/null | grep -qi nvidia || { echo "ok - no NVIDIA GPU found (nothing to do)"; exit 0; }
+  exit 2  # rerun to detect with lspci present
 fi
-echo "NEEDS FIX - NVIDIA GPU present, no working driver (llvmpipe/software rendering likely)"
-[ "$MODE" = "fix" ] || exit 2
 
-if ! consent "install the proprietary NVIDIA driver branch $BRANCH (non-free license)?" NVIDIA_PROPRIETARY; then
-  echo "skipped proprietary driver. manual path:"
-  echo "  openSUSE: sudo zypper addrepo NVIDIA repo, sudo zypper install nvidia-video-$BRANCH, reboot"
-  echo "  Fedora:   RPM Fusion, then: sudo dnf install akmod-nvidia, wait, reboot"
-  echo "  Arch:     sudo pacman -S nvidia nvidia-utils (or nvidia-open), reboot"
-  echo "  Debian/Ubuntu: sudo apt install nvidia-driver (non-free on) / ubuntu-drivers autoinstall"
-  exit 2
+if [ "$have_nvidia" = "0" ] && [ "$have_amd" = "0" ]; then
+  if have nvidia-smi && nvidia-smi >/dev/null 2>&1; then :; else
+    echo "ok - no NVIDIA/AMD GPU found (nothing to do)"
+    exit 0
+  fi
 fi
-ensure_sudo || exit 1
-case "$PM" in
-  zypper)
-    if ! zypper lr 2>/dev/null | grep -qi nvidia; then
-      echo "adding NVIDIA repo..."
-      if grep -qi tumbleweed /etc/os-release 2>/dev/null; then
-        sudo zypper addrepo -f https://download.nvidia.com/opensuse/tumbleweed/ NVIDIA || exit 1
-      else
-        ver=$(grep -oP '^VERSION_ID="\K[^"]+' /etc/os-release 2>/dev/null || echo "15.6")
-        sudo zypper addrepo -f "https://download.nvidia.com/opensuse/leap/$ver/" NVIDIA || exit 1
+
+driver_of() {
+  # $1 = grep pattern for the device line; echo "Kernel driver in use" value
+  lspci -k 2>/dev/null | grep -A2 -i "$1" | grep -oP "Kernel driver in use: \K.*" | head -n 1
+}
+
+# ---- NVIDIA on Nouveau ----
+if [ "$have_nvidia" = "1" ]; then
+  if lsmod 2>/dev/null | grep -q "^nvidia "; then
+    echo "note - proprietary NVIDIA stack is loaded; Helper leaves it alone"
+    echo "  (want Nouveau instead? remove the vendor driver per your distro's docs, then rerun)"
+  else
+    driver=$(driver_of nvidia)
+    bl_files=$(grep -rlE "blacklist.*nouveau|nouveau.*blacklist|blacklist.*nvidia|options nouveau.*modeset=0" "$MP_D" 2>/dev/null || true)
+    cmdline=$(cat "$CMDLINE" 2>/dev/null || true)
+    noms=0
+    echo "$cmdline" | grep -qw "nomodeset" && noms=1
+    echo "$cmdline" | grep -q "modprobe.blacklist=nouveau" && noms=1
+    if [ "$driver" = "nouveau" ] && [ -z "$bl_files" ] && [ "$noms" = "0" ]; then
+      echo "ok - Nouveau driving the NVIDIA GPU, nothing blacklisted"
+    else
+      need "NVIDIA present but Nouveau not driving it (driver: ${driver:-none})"
+      [ -n "$bl_files" ] && echo "$bl_files" | sed 's/^/  blacklisted in: /'
+      [ "$noms" = "1" ] && echo "  kernel cmdline blocks modesetting (nomodeset/blacklist)"
+      if [ "$MODE" = "fix" ]; then
+        ensure_sudo || exit 1
+        if [ -n "$bl_files" ]; then
+          echo "$bl_files" | while read -r f; do
+            [ -n "$f" ] || continue
+            sudo cp -a "$f" "$f.maid-bak" 2>/dev/null || true
+            sudo sed -i -E 's/^(\s*)(blacklist +(nouveau|nvidia).*|options +nouveau.*modeset=0.*)/\1# maid-helper disabled: \2/' "$f" \
+              && echo "  unblacklisted in $f (backup: $f.maid-bak)"
+          done
+        fi
+        case "$PM" in
+          zypper|dnf) sudo dracut -f 2>&1 | tail -n 1 || true ;;
+          pacman) sudo mkinitcpio -P 2>&1 | tail -n 2 || true ;;
+          apt) sudo update-initramfs -u 2>&1 | tail -n 1 || true ;;
+        esac
+        if [ "$noms" = "1" ]; then
+          echo "REMAINING MANUAL STEP - remove nomodeset from your bootloader:"
+          echo "  openSUSE/Fedora: sudo grubby --remove-args=nomodeset --update-kernel=ALL"
+          echo "  Arch: edit /boot/loader/entries/*.conf (or grub config), then reboot"
+          echo "  Debian/Ubuntu: edit /etc/default/grub, sudo update-grub, then reboot"
+        fi
+        echo "reboot, then rerun --check"
       fi
     fi
-    install_pkgs zypper "nvidia-video-$BRANCH" "nvidia-gl-$BRANCH" || true
-    ;;
-  dnf)
-    if ! rpm -q rpmfusion-nonfree-release >/dev/null 2>&1; then
-      echo "adding RPM Fusion nonfree (for the NVIDIA driver)..."
-      fed=$(rpm -E %fedora 2>/dev/null || echo 41)
-      sudo dnf install -y "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$fed.noarch.rpm" || exit 1
-    fi
-    install_pkgs dnf akmod-nvidia || true
-    echo "akmod builds the kernel module in the background — wait ~5 min, then reboot"
-    ;;
-  pacman)
-    install_pkgs pacman nvidia nvidia-utils || true
-    echo "note: Turing+ can use nvidia-open instead; linux-lts needs nvidia-lts"
-    ;;
-  apt)
-    if grep -qi ubuntu /etc/os-release 2>/dev/null; then
-      sudo ubuntu-drivers autoinstall 2>&1 | tail -n 2 || true
-    else
-      install_pkgs apt nvidia-driver || true
-      echo "note: Debian needs non-free enabled for nvidia-driver"
-    fi
-    ;;
-  *) echo "unsupported distro for GPU"; exit 1 ;;
-esac
-
-echo "REBOOT REQUIRED - the driver loads on next boot, verify then with: nvidia-smi"
-if have mokutil && mokutil --sb-state 2>/dev/null | grep -qi enabled; then
-  echo "Secure Boot is ON: at reboot, enroll the key when MOK Manager appears"
-  echo "(same password you set if asked during install; skip = driver won't load)"
+  fi
 fi
-echo "ok - driver installed (reboot to activate)"
+
+# ---- AMD on amdgpu ----
+if [ "$have_amd" = "1" ]; then
+  drv=$(lspci -k 2>/dev/null | awk 'tolower($0) ~ /vga|3d|display/ {amd=tolower($0) ~ /amd|ati|radeon|1002/} amd && /Kernel driver in use:/ {print $NF; amd=0}' | head -n 1)
+  if [ "$drv" = "amdgpu" ]; then
+    fw_ok=1; vk_ok=1
+    case "$PM" in
+      zypper) pkg_present kernel-firmware-amdgpu || fw_ok=0 ;;
+      dnf) pkg_present linux-firmware || fw_ok=0 ;;
+      pacman) pkg_present linux-firmware || fw_ok=0 ;;
+      apt) pkg_present firmware-amd-graphics || fw_ok=0 ;;
+    esac
+    ls /usr/share/vulkan/icd.d/*radeon* /usr/share/vulkan/icd.d/*amd* >/dev/null 2>&1 || vk_ok=0
+    if [ "$fw_ok" = "1" ] && [ "$vk_ok" = "1" ]; then
+      echo "ok - amdgpu driving AMD GPU, firmware + Vulkan present"
+    else
+      need "amdgpu loaded but incomplete (firmware: $fw_ok, vulkan: $vk_ok)"
+      if [ "$MODE" = "fix" ]; then
+        ensure_sudo || exit 1
+        case "$PM" in
+          zypper) install_pkgs zypper kernel-firmware-amdgpu libvulkan_radeon || true ;;
+          dnf) install_pkgs dnf linux-firmware mesa-vulkan-drivers || true ;;
+          pacman) install_pkgs pacman linux-firmware vulkan-radeon || true ;;
+          apt) install_pkgs apt firmware-amd-graphics mesa-vulkan-drivers || true ;;
+        esac
+        echo "reboot if firmware was just installed, then rerun --check"
+      fi
+    fi
+  elif [ "$drv" = "radeon" ]; then
+    need "AMD card on legacy radeon driver (no Vulkan, weaker power management)"
+    echo "  GCN 1.0/1.1 cards can switch to amdgpu with kernel flags (bootloader edit, manual):"
+    echo "  amdgpu.si_support=1 amdgpu.cik_support=1 radeon.si_support=0 radeon.cik_support=0"
+    echo "  older cards stay on radeon (fine for desktop, no Vulkan)"
+  else
+    need "AMD GPU present, no driver bound (driver: ${drv:-none})"
+    [ "$MODE" = "fix" ] || true
+  fi
+fi
+
+[ "$NEED" = "0" ] && exit 0
+[ "$MODE" = "fix" ] && exit 2
+exit 2
