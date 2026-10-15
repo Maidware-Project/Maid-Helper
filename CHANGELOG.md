@@ -1,5 +1,16 @@
 # changelog
 
+## more doctors: gamepad, flatpak, firmware, AMD
+
+- new modules: gamepads (USB + bluetooth detect, Steam Input noted
+  first, delegates to Maid AU's stack on openSUSE), flathub remote,
+  fwupd presence — same check/fix contract as the rest.
+- gpu covers AMD now (amdgpu + firmware + Vulkan verified, legacy
+  radeon gets printed kernel flags); NVIDIA stays Nouveau-only,
+  nothing proprietary anywhere.
+- distros: derivatives ride their family (manjaro, mint, pop, rocky);
+  unknown distros get manual commands, tested via fixtures.
+
 ## first release
 
 - five doctor modules (codecs, gpu, print, fonts, suite) behind one

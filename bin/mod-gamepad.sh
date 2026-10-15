@@ -11,6 +11,8 @@ set -u
 here="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1090,SC1091
 . "$here/lib.sh"
+# standalone-safe: dispatcher exports PM, direct runs detect it
+: "${PM:=$(detect_pm)}"
 
 MODE="${1:-check}"
 
