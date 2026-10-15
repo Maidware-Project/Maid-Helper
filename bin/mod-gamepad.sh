@@ -18,7 +18,9 @@ MODE="${1:-check}"
 
 pads=""
 if have lsusb; then
-  pads=$(lsusb 2>/dev/null | grep -iE "045e|054c|057e|28de|2dc8|xbox|playstation|nintendo|switch|8bitdo|gamepad|controller" || true)
+  # VIDs + strong keywords only: bare "controller" matches motherboard
+  # LED/lighting gear (e.g. ASUS AURA LED Controller), not gamepads.
+  pads=$(lsusb 2>/dev/null | grep -iE "045e|054c|057e|28de|2dc8|xbox|playstation|dualshock|dualsense|nintendo|8bitdo|gamepad" || true)
 fi
 if [ -z "$pads" ] && have bluetoothctl; then
   pads=$(bluetoothctl devices 2>/dev/null | grep -iE "xbox|playstation|dualshock|dualsense|nintendo|switch|8bitdo|gamepad|controller" || true)
