@@ -113,4 +113,4 @@ bash install.sh --uninstall --purge    # everything out including the log
 
 ## License
 
-MIT — see LICENSE.
+MIT — see LICENSE. a Maidware Project: forkable open-source tools for linux users.
