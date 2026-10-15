@@ -1,4 +1,5 @@
 #!/bin/bash
 echo 'Bus 001 Device 002: ID 8087:0026 Intel Test Hub'
+echo 'Bus 001 Device 005: ID 0b05:19af ASUSTek Computer, Inc. AURA LED Controller'
 [ "${GAMEPAD:-none}" = "usb" ] && echo 'Bus 001 Device 003: ID 045e:0b13 Xbox Test Pad'
 exit 0
