@@ -37,11 +37,21 @@ for f in "$PKGDIR"/bin/mod-*.sh; do
   cmp -s "$f" "/tmp/maidhelp-i/.local/bin/$b" || fail "not installed: $b"
 done
 [ -x /tmp/maidhelp-i/.local/bin/maid-helper ] || fail "dispatcher not executable"
+[ -x /tmp/maidhelp-i/.local/bin/maid-helper-run ] || fail "launcher not executable"
 [ -f /tmp/maidhelp-i/.local/share/applications/maid-helper.desktop ] || fail "desktop entry missing"
+grep -q "Terminal=false" /tmp/maidhelp-i/.local/share/applications/maid-helper.desktop || fail "desktop forces terminal"
 HOME=/tmp/maidhelp-i bash "$PKGDIR/install.sh" --uninstall --purge </dev/null >/dev/null 2>&1 || fail "fake uninstall crashed"
 [ -e /tmp/maidhelp-i/.local/bin/maid-helper ] && fail "uninstall left files"
+[ -e /tmp/maidhelp-i/.local/bin/maid-helper-run ] && fail "uninstall left launcher"
 rm -rf /tmp/maidhelp-i
 ok "installer covers every module + uninstall"
+
+echo "== launcher picks ghostty, passes args =="
+rm -f /tmp/mh-term.log
+HOME=/tmp/maidhelp-t PATH="$STUBS:/usr/bin:/bin" bash "$PKGDIR/bin/maid-helper-run" --only suite --check > /tmp/mh-term-out.txt 2>&1
+grep -q "TERM_LAUNCH: -e .*maid-helper --only suite --check" /tmp/mh-term.log || fail "launcher did not exec terminal correctly"
+rm -f /tmp/mh-term.log /tmp/mh-term-out.txt
+ok "launcher picks ghostty"
 
 echo "== dispatcher: check reports, unknown rejected =="
 export PATH="$STUBS:/usr/bin:/bin"

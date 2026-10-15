@@ -1,0 +1,2 @@
+#!/bin/bash
+echo "TERM_LAUNCH: $@" >> /tmp/mh-term.log
