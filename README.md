@@ -5,6 +5,26 @@ the GPU sits idle, the printer won't print, fonts look wrong, gamepads
 do nothing, flatpak has nowhere to install from, firmware never
 updates. this checks the lot and fixes what it safely can.
 
+## quick start
+
+```sh
+bash install.sh            # copy + launcher
+maid-helper --check        # read-only report, change nothing
+maid-helper --fix          # apply the safe fixes (sudo inside)
+```
+
+## why not just follow wiki guides?
+
+that's exactly what this automates: the same per-distro package
+names and config checks the wikis list, as one read-only `--check`
+explaining each finding in plain words — then `--fix` does the safe
+parts and prints the manual parts as exact commands. nothing hidden,
+nothing irreversible without asking.
+
+live-tested on openSUSE Tumbleweed (AMD); NVIDIA and other-distro
+paths ride the stub-farm suite + CI until real hardware confirms
+them — the suite tells you which is which.
+
 ```
 bin/maid-helper          dispatcher
 bin/mod-codecs.sh        videos/music codecs (ffmpeg, gstreamer, BT audio)
