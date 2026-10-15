@@ -1,0 +1,7 @@
+#!/bin/bash
+# FW_STATE=ok -> working daemon; anything else -> missing/broken
+if [ "${FW_STATE:-ok}" = "ok" ]; then
+  echo "client version: 9.9.9-test"
+  exit 0
+fi
+exit 1

@@ -1,0 +1,8 @@
+#!/bin/bash
+# state file lists remotes; remote-add appends flathub
+ST="${FLAT_STATE:-/dev/null}"
+case "$*" in
+  *remotes*) cat "$ST" 2>/dev/null ;;
+  *remote-add*) echo "flathub https://dl.flathub.org/repo/" >> "$ST" ;;
+esac
+exit 0

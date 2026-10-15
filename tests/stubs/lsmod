@@ -1,0 +1,3 @@
+#!/bin/bash
+# empty: no proprietary modules in tests, deterministically
+exit 0

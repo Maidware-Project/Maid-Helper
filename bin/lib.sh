@@ -10,13 +10,18 @@ say() { echo "$*"; log "$*"; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
 detect_pm() {
-  if [ -f /etc/os-release ]; then
+  # MAID_OS_RELEASE overrides the source (tests feed fixture files).
+  # Derivatives ride their family via ID_LIKE (manjaro, pop, mint...).
+  # Unknown distros report none — callers print manual commands instead
+  # of failing silently.
+  local release="${MAID_OS_RELEASE:-/etc/os-release}"
+  if [ -f "$release" ]; then
     # shellcheck disable=SC1091
-    . /etc/os-release
+    . "$release"
     case "${ID:-} ${ID_LIKE:-}" in
       *arch*) echo pacman; return ;;
       *debian*|*ubuntu*|*linuxmint*) echo apt; return ;;
-      *fedora*|*rhel*|*centos*) echo dnf; return ;;
+      *fedora*|*rhel*|*centos*|*rocky*|*alma*) echo dnf; return ;;
       *suse*|*opensuse*) echo zypper; return ;;
     esac
   fi

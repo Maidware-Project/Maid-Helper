@@ -1,13 +1,14 @@
 # Maid Helper — first-aid kit for linux
 
-new (and older) linux users hit the same four walls: videos won't
-play, the NVIDIA GPU sits idle, the printer won't print, fonts look
-wrong. this checks all four and fixes what it safely can.
+new (and older) linux users hit the same walls: videos won't play,
+the GPU sits idle, the printer won't print, fonts look wrong, gamepads
+do nothing, flatpak has nowhere to install from, firmware never
+updates. this checks the lot and fixes what it safely can.
 
 ```
 bin/maid-helper          dispatcher
 bin/mod-codecs.sh        videos/music codecs (ffmpeg, gstreamer, BT audio)
-bin/mod-gpu.sh           NVIDIA on the open Nouveau stack (never proprietary)
+bin/mod-gpu.sh           NVIDIA (Nouveau) + AMD (amdgpu), open drivers only
 bin/mod-print.sh         CUPS + driverless printers
 bin/mod-fonts.sh         emoji + CJK + MS fonts (MS only with consent)
 bin/mod-gamepad.sh       gamepads (delegates to Maid AU on openSUSE)
@@ -18,12 +19,23 @@ bin/lib.sh               shared bits (never run directly)
 install.sh               multi-distro installer
 ```
 
+## installation
+
+```sh
+bash install.sh                # deps (sudo) + copy + launcher
+bash install.sh --check        # dry run
+bash install.sh --no-packages  # skip installing packages
+```
+
+existing files are backed up to `*.bak-<timestamp>` (only when content
+actually changed). no network downloads anywhere in this package.
+
 ## usage
 
 ```sh
 maid-helper --check           # report only, changes nothing (default)
 maid-helper --fix             # detect + apply fixes (sudo inside)
-maid-helper --only codecs     # one module: codecs|gpu|print|fonts|suite
+maid-helper --only codecs     # one module: codecs|gpu|print|fonts|suite|gamepad|flatpak|firmware
 ```
 
 exit codes: `0` healthy/fixed, `2` needs attention, anything else failed.
@@ -31,23 +43,27 @@ exit codes: `0` healthy/fixed, `2` needs attention, anything else failed.
 ## fully open source, floss compliant
 
 MIT, like the rest of the suite. non-free software never installs
-here, period — no NVIDIA proprietary path exists in this tool (the
-GPU doctor works the open Nouveau stack only). the single exception
-is Microsoft fonts, which install **only** with your explicit yes —
-a prompt on interactive terminals, or `MSFONTS=1`.
+here, period — no proprietary GPU path exists in this tool, and the
+single exception (Microsoft fonts) installs **only** with your
+explicit yes: a prompt on interactive terminals, or `MSFONTS=1`.
 without consent it prints the manual path and reports NEEDS ATTENTION
 instead. patent-encumbered codecs come from the community repos your
 distro already uses for this (Packman, RPM Fusion) — said plainly in
 the output, never hidden.
 
-## what it needs per distro
+## what you need per distro
 
-| need | arch | debian/ubuntu | fedora | opensuse |
+| need | arch (+manjaro, endeavour) | debian/ubuntu (+mint, pop, zorin) | fedora (+rhel clones) | opensuse (+leap, slowroll) |
 |---|---|---|---|---|
 | GPU detect | pciutils | pciutils | pciutils | pciutils |
 | everything else | stock tools | stock tools | stock tools | stock tools |
 
-no services here — runs on demand, so init doesn't matter.
+derivatives ride their family's backend automatically (`ID_LIKE`
+honored). anything else: `--check` still reports, and every fix path
+prints the manual commands instead of failing silently.
+
+no services here — runs on demand, so init doesn't matter. fork it
+for whatever setup you run.
 
 ## safety
 
@@ -55,11 +71,9 @@ no services here — runs on demand, so init doesn't matter.
   installs or restarts.
 - every package install reports per-package success/fail — one stale
   package name never fails the whole run silently.
-- reboot, Secure Boot key enrollment, and test pages stay manual,
-  printed as exact commands, never performed.
+- reboot, Secure Boot key enrollment, bootloader edits, and test
+  pages stay manual, printed as exact commands, never performed.
 - never holds packages; never auto-enrolls Secure Boot keys.
-- NVIDIA branch defaults to G06 (Turing and newer); override per run:
-  `NVIDIA_BRANCH=G05 maid-helper --fix`.
 
 ## ecosystem (maid suite)
 
