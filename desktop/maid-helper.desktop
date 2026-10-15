@@ -1,9 +1,9 @@
 [Desktop Entry]
 Name=Maid Helper
 Comment=First-aid kit for Linux: codecs, GPU, printer, fonts
-Exec=/home/visa/.local/bin/maid-helper --check
+Exec=/home/visa/.local/bin/maid-helper-run --check
 Icon=system-run
-Terminal=true
+Terminal=false
 Type=Application
 Categories=System;
 Keywords=help;fix;doctor;codecs;driver;printer;fonts;
