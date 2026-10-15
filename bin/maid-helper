@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Maid Helper: first-aid kit for new (and older) Linux users.
+#   maid-helper --check [--only a,b]   report only, change nothing (default)
+#   maid-helper --fix [--only a,b]      detect + apply fixes (sudo inside)
+# Modules: codecs, gpu, print, fonts. Fully open source (MIT); non-free
+# software (NVIDIA drivers, Microsoft fonts) installs only with explicit
+# consent — tty prompt, or NVIDIA_PROPRIETARY=1 / MSFONTS=1. No services.
+set -u
+BINDIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1090,SC1091
+. "$BINDIR/lib.sh"
+LOG="$HOME/.local/share/maid-helper.log"
+mkdir -p "$(dirname "$LOG")"
+
+MODE=check; ONLY=""
+for a in "$@"; do
+  case "$a" in
+    --check) MODE=check ;;
+    --fix) MODE=fix ;;
+    --only=*) ONLY="${a#--only=}" ;;
+    *) echo "unknown option: $a (see header)" >&2; exit 2 ;;
+  esac
+done
+
+MODULES="codecs gpu print fonts suite"
+if [ -n "$ONLY" ]; then
+  MODULES=$(echo "$ONLY" | tr ',' ' ')
+fi
+
+PM=$(detect_pm)
+[ "$PM" = "none" ] && { echo "unsupported distro (need pacman/apt/dnf/zypper)"; exit 2; }
+export PM BINDIR LOG
+export NVIDIA_PROPRIETARY="${NVIDIA_PROPRIETARY:-0}"
+export MSFONTS="${MSFONTS:-0}"
+
+FAILED=0; NEEDS=0
+for m in $MODULES; do
+  mod="$BINDIR/mod-$m.sh"
+  [ -f "$mod" ] || { echo "unknown module: $m (codecs/gpu/print/fonts)"; FAILED=1; continue; }
+  echo "--- $m ---"
+  if bash "$mod" "$MODE"; then :; else
+    rc=$?
+    if [ "$rc" = "2" ]; then NEEDS=1; else FAILED=1; fi
+  fi
+done
+# rc convention: 0 healthy/fixed, 2 needs attention, else failed
+if [ "$FAILED" != "0" ]; then echo "result: FAILED (see above)"; exit 1; fi
+if [ "$NEEDS" != "0" ]; then
+  [ "$MODE" = "check" ] && echo "result: stuff needs fixing — rerun with --fix" || echo "result: stuff still needs attention (see above)"
+  exit 2
+fi
+echo "result: all healthy"

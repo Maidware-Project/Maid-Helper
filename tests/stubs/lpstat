@@ -1,0 +1,6 @@
+#!/bin/bash
+case "$*" in
+  *-r*) echo "scheduler is running" ;;
+  *) echo "printer FakePrinter idle" ;;
+esac
+exit 0

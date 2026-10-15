@@ -1,0 +1,15 @@
+#!/bin/bash
+# BT_CODECS=full -> bluez card offering LDAC+AAC; anything else -> plain card
+case "$*" in
+  *short*cards*)
+    [ "${BT_CODECS:-}" = "full" ] && echo "99 bluez_card.AA_BB_CC_DD_EE_FF"
+    ;;
+  *list*cards*)
+    if [ "${BT_CODECS:-}" = "full" ]; then
+      printf 'Card #99\n\tName: bluez_card.AA_BB_CC_DD_EE_FF\n\ta2dp-sink: High Fidelity Playback (A2DP Sink, codec LDAC)\n\ta2dp-sink-aac: High Fidelity Playback (A2DP Sink, codec AAC)\n'
+    else
+      printf 'Card #54\n\tName: alsa_output.pci\n'
+    fi
+    ;;
+esac
+exit 0

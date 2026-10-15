@@ -1,0 +1,8 @@
+#!/bin/bash
+# FF_DECODERS=full -> mp3/aac/h264 present; anything else -> bare
+case "$*" in
+  *-decoders*)
+    [ "${FF_DECODERS:-}" = "full" ] && printf ' ... libmp3lame\n ... aac \n ... h264 \n'
+    ;;
+esac
+exit 0
