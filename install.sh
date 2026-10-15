@@ -40,6 +40,7 @@ if [ "$UNINST" = "1" ]; then
     "$BINDIR"/mod-print.sh "$BINDIR"/mod-fonts.sh "$BINDIR"/mod-suite.sh \
     "$BINDIR"/mod-gamepad.sh "$BINDIR"/mod-flatpak.sh "$BINDIR"/mod-firmware.sh
   rm -f "$SHAREDIR"/applications/maid-helper.desktop
+  rm -f "$SHAREDIR"/icons/hicolor/scalable/apps/maid-helper.svg
   if [ "$PURGE" = "1" ]; then
     rm -f "$HOME"/.local/share/maid-helper.log
     say "uninstalled, logs removed (--purge)"
@@ -136,6 +137,10 @@ done
 for f in "$PKGDIR"/desktop/*.desktop; do
   [ -f "$f" ] || continue
   copy_one "$f" "$SHAREDIR/applications/$(basename "$f")" $REWRITE
+done
+for f in "$PKGDIR"/desktop/*.svg; do
+  [ -f "$f" ] || continue
+  copy_one "$f" "$SHAREDIR/icons/hicolor/scalable/apps/$(basename "$f")" 0
 done
 
 if [ "$CHECK" = "1" ]; then say "(check only, nothing changed)"; exit 0; fi

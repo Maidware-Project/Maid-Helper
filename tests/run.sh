@@ -39,9 +39,11 @@ done
 [ -x /tmp/maidhelp-i/.local/bin/maid-helper ] || fail "dispatcher not executable"
 [ -x /tmp/maidhelp-i/.local/bin/maid-helper-run ] || fail "launcher not executable"
 [ -f /tmp/maidhelp-i/.local/share/applications/maid-helper.desktop ] || fail "desktop entry missing"
+[ -f /tmp/maidhelp-i/.local/share/icons/hicolor/scalable/apps/maid-helper.svg ] || fail "icon missing"
 grep -q "Terminal=false" /tmp/maidhelp-i/.local/share/applications/maid-helper.desktop || fail "desktop forces terminal"
 HOME=/tmp/maidhelp-i bash "$PKGDIR/install.sh" --uninstall --purge </dev/null >/dev/null 2>&1 || fail "fake uninstall crashed"
 [ -e /tmp/maidhelp-i/.local/bin/maid-helper ] && fail "uninstall left files"
+[ -e /tmp/maidhelp-i/.local/share/icons/hicolor/scalable/apps/maid-helper.svg ] && fail "uninstall left icon"
 [ -e /tmp/maidhelp-i/.local/bin/maid-helper-run ] && fail "uninstall left launcher"
 rm -rf /tmp/maidhelp-i
 ok "installer covers every module + uninstall"
