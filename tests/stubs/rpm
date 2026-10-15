@@ -1,0 +1,3 @@
+#!/bin/bash
+if [ "${1:-}" = "-E" ]; then echo 41; fi
+exit 0

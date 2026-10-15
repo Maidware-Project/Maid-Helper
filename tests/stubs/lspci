@@ -1,0 +1,4 @@
+#!/bin/bash
+echo "00:02.0 VGA compatible controller: Intel Test Graphics"
+[ "${NVIDIA_VGA:-0}" = "1" ] && echo "01:00.0 VGA compatible controller: NVIDIA Test GPU"
+exit 0

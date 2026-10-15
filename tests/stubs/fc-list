@@ -1,0 +1,3 @@
+#!/bin/bash
+printf 'Noto Color Emoji\nNoto Sans CJK JP\nDejaVu Sans\n'
+exit 0

@@ -1,0 +1,6 @@
+#!/bin/bash
+case "$*" in
+  *is-enabled*) echo "enabled" ;;
+  *is-active*) exit 1 ;;
+esac
+exit 0
