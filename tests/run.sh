@@ -166,6 +166,22 @@ out=$(bash "$PKGDIR/bin/mod-suite.sh" check 2>&1); rc=$?
 echo "$out" | grep -q "Maid BT not installed" || fail "bt missing not reported"
 ok "suite wholeness"
 
+echo "== suite spine: check plans without touching =="
+rm -rf /tmp/mh-base; mkdir -p "/tmp/mh-base/Maid BT"
+git init -q "/tmp/mh-base/Maid BT" 2>/dev/null
+printf '#!/bin/bash\necho stub-install\n' > "/tmp/mh-base/Maid BT/install.sh"
+chmod +x "/tmp/mh-base/Maid BT/install.sh"
+mkdir -p "/tmp/mh-base/plaindir"
+out=$(MAID_SUITE_BASE=/tmp/mh-base MAID_GITHUB=/tmp/mh-base bash "$PKGDIR/install-suite.sh" --check 2>&1); rc=$?
+[ "$rc" = "0" ] || fail "spine check crashed (rc=$rc)"
+echo "$out" | grep -q "Maid AU: cloning..." || fail "missing spaced repo not planned"
+echo "$out" | grep -q "(check: would clone Maid-AU)" || fail "clone target wrong"
+echo "$out" | grep -q "MHE/Maid-Helper: cloning..." || fail "nested repo not planned"
+echo "$out" | grep -qE "^==> Maid: " && fail "spaced names shredded!"
+[ -d "/tmp/mh-base/Maid AU" ] && fail "check mode cloned!"
+rm -rf /tmp/mh-base
+ok "suite spine check"
+
 echo "== cleanup =="
 rm -rf /tmp/maidhelp-t
 unset FF_DECODERS BT_CODECS NVIDIA_VGA AMD_VGA AMD_RV GAMEPAD FLAT_STATE FW_STATE
