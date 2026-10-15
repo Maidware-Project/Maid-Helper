@@ -43,6 +43,10 @@ stub farm whenever reporting verification.
   runs without consent print instructions and report NEEDS ATTENTION
   instead.
 - No personal data in repo. Installer copies, never symlinks, backs up.
+- Commits: short lowercase summaries with a prefix (`fix:`, `feat:`, `docs:`,
+  `tests:`, `chore:`), one logical change each. Sign off every commit
+  (`git commit -s`); AI-assisted work adds an `Assisted-by:` trailer
+  naming the tool. Bug fixes cite `Fixes: #N`.
 - `--check` reports, changes nothing. `--fix` is the only path that
   installs anything or restarts anything. Manual steps (reboot, MOK
   password, test page) are printed, never performed silently.
