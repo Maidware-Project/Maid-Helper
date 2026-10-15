@@ -13,6 +13,8 @@ set -u
 here="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1090,SC1091
 . "$here/lib.sh"
+# standalone-safe: dispatcher exports PM, direct runs detect it
+: "${PM:=$(detect_pm)}"
 
 MODE="${1:-check}"
 MP_D="${MAID_MODPROBE_D:-/etc/modprobe.d}"
@@ -25,7 +27,7 @@ have_nvidia=0
 have_amd=0
 if have lspci; then
   lspci -nn 2>/dev/null | grep -qi nvidia && have_nvidia=1
-  lspci -nn 2>/dev/null | grep -Ei "VGA|3D|Display" | grep -qiE "amd|ati|radeon|1002" && have_amd=1
+  lspci -nn 2>/dev/null | grep -Ei "VGA|3D|Display" | grep -qiE "amd[^a-z]|ati[^a-z]|radeon|1002" && have_amd=1
 elif ! have nvidia-smi; then
   echo "NEEDS FIX - can't tell (pciutils missing, so GPUs are invisible)"
   [ "$MODE" = "fix" ] || exit 2
@@ -99,7 +101,7 @@ fi
 
 # ---- AMD on amdgpu ----
 if [ "$have_amd" = "1" ]; then
-  drv=$(lspci -k 2>/dev/null | awk 'tolower($0) ~ /vga|3d|display/ {amd=tolower($0) ~ /amd|ati|radeon|1002/} amd && /Kernel driver in use:/ {print $NF; amd=0}' | head -n 1)
+  drv=$(lspci -k 2>/dev/null | awk 'tolower($0) ~ /vga|3d|display/ {amd=tolower($0) ~ /(^|[^a-z])(amd|ati|radeon)([^a-z]|$)|1002/} amd && /Kernel driver in use:/ {print $NF; amd=0}' | head -n 1)
   if [ "$drv" = "amdgpu" ]; then
     fw_ok=1; vk_ok=1
     case "$PM" in
@@ -108,7 +110,7 @@ if [ "$have_amd" = "1" ]; then
       pacman) pkg_present linux-firmware || fw_ok=0 ;;
       apt) pkg_present firmware-amd-graphics || fw_ok=0 ;;
     esac
-    ls "$VK_DIR"/*radeon* "$VK_DIR"/*amd* >/dev/null 2>&1 || vk_ok=0
+    ls "$VK_DIR"/*radeon* >/dev/null 2>&1 || ls "$VK_DIR"/*amd* >/dev/null 2>&1 || vk_ok=0
     if [ "$fw_ok" = "1" ] && [ "$vk_ok" = "1" ]; then
       echo "ok - amdgpu driving AMD GPU, firmware + Vulkan present"
     else

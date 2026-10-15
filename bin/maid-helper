@@ -13,12 +13,13 @@ LOG="$HOME/.local/share/maid-helper.log"
 mkdir -p "$(dirname "$LOG")"
 
 MODE=check; ONLY=""
-for a in "$@"; do
-  case "$a" in
-    --check) MODE=check ;;
-    --fix) MODE=fix ;;
-    --only=*) ONLY="${a#--only=}" ;;
-    *) echo "unknown option: $a (see header)" >&2; exit 2 ;;
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --check) MODE=check; shift ;;
+    --fix) MODE=fix; shift ;;
+    --only=*) ONLY="${1#--only=}"; shift ;;
+    --only) ONLY="${2:-}"; shift 2 2>/dev/null || shift ;;
+    *) echo "unknown option: $1 (see header)" >&2; exit 2 ;;
   esac
 done
 

@@ -51,17 +51,81 @@ out=$(bash "$PKGDIR/bin/mod-codecs.sh" check 2>&1)
 echo "$out" | grep -q "skip - no bluetooth" || fail "no-card skip missing"
 ok "codecs detect"
 
-echo "== gpu: no nvidia is healthy, present-but-driverless needs fix =="
-export NVIDIA_VGA=0
+echo "== gpu: nouveau + amdgpu healthy paths =="
+export NVIDIA_VGA=0 AMD_VGA=0
 out=$(bash "$PKGDIR/bin/mod-gpu.sh" check 2>&1); rc=$?
-[ "$rc" = "0" ] || fail "gpu check should pass without nvidia (rc=$rc)"
+[ "$rc" = "0" ] || fail "gpu check should pass with no GPU (rc=$rc)"
 export NVIDIA_VGA=1
+mkdir -p /tmp/mh-modprobe && : > /tmp/mh-modprobe/empty.conf
+printf '' > /tmp/mh-cmdline
+out=$(MAID_MODPROBE_D=/tmp/mh-modprobe MAID_CMDLINE=/tmp/mh-cmdline bash "$PKGDIR/bin/mod-gpu.sh" check 2>&1); rc=$?
+[ "$rc" = "0" ] || fail "nouveau healthy should pass (rc=$rc): $out"
+echo "$out" | grep -q "Nouveau driving" || fail "nouveau ok line missing"
+export NVIDIA_VGA=0 AMD_VGA=1 MAID_VULKAN_DIR=/tmp/mh-vk
+mkdir -p /tmp/mh-vk && : > /tmp/mh-vk/radeon_icd.x86_64.json
 out=$(bash "$PKGDIR/bin/mod-gpu.sh" check 2>&1); rc=$?
-[ "$rc" = "2" ] || fail "gpu check should need fix (rc=$rc)"
-out=$(bash "$PKGDIR/bin/mod-gpu.sh" fix </dev/null 2>&1); rc=$?
-[ "$rc" = "2" ] || fail "proprietary needs consent (rc=$rc)"
-echo "$out" | grep -q "NVIDIA_PROPRIETARY" || fail "consent hint missing"
-ok "gpu detect + consent gate"
+[ "$rc" = "0" ] || fail "amdgpu healthy should pass (rc=$rc): $out"
+echo "$out" | grep -q "amdgpu driving" || fail "amdgpu ok line missing"
+ok "gpu nouveau + amdgpu healthy"
+
+echo "== gpu: nouveau blacklisted, radeon legacy need fix =="
+export NVIDIA_VGA=1 AMD_VGA=0
+printf 'blacklist nouveau\n' > /tmp/mh-modprobe/nvidia.conf
+out=$(MAID_MODPROBE_D=/tmp/mh-modprobe MAID_CMDLINE=/tmp/mh-cmdline bash "$PKGDIR/bin/mod-gpu.sh" check 2>&1); rc=$?
+[ "$rc" = "2" ] || fail "blacklisted nouveau should need fix (rc=$rc)"
+out=$(MAID_MODPROBE_D=/tmp/mh-modprobe MAID_CMDLINE=/tmp/mh-cmdline bash "$PKGDIR/bin/mod-gpu.sh" fix </dev/null 2>&1); rc=$?
+[ "$rc" = "2" ] || fail "blacklist fix ends reboot-pending (rc=$rc)"
+grep -q "^# maid-helper disabled: blacklist nouveau" /tmp/mh-modprobe/nvidia.conf || fail "blacklist not commented"
+[ -f /tmp/mh-modprobe/nvidia.conf.maid-bak ] || fail "no backup of modprobe file"
+export NVIDIA_VGA=0 AMD_VGA=1 AMD_RV=1
+out=$(bash "$PKGDIR/bin/mod-gpu.sh" check 2>&1); rc=$?
+[ "$rc" = "2" ] || fail "radeon legacy should need fix (rc=$rc)"
+echo "$out" | grep -q "amdgpu.si_support=1" || fail "kernel flags not printed"
+rm -rf /tmp/mh-modprobe /tmp/mh-cmdline /tmp/mh-vk
+ok "gpu blacklist + legacy need fix"
+
+echo "== distros: derivatives ride their family =="
+[ "$(PKGDIR="$PKGDIR" MAID_OS_RELEASE="$PKGDIR/tests/fixtures/os-manjaro" bash -c '. "$PKGDIR/bin/lib.sh"; detect_pm')" = "pacman" ] || fail "manjaro not pacman"
+[ "$(PKGDIR="$PKGDIR" MAID_OS_RELEASE="$PKGDIR/tests/fixtures/os-pop" bash -c '. "$PKGDIR/bin/lib.sh"; detect_pm')" = "apt" ] || fail "pop not apt"
+[ "$(PKGDIR="$PKGDIR" MAID_OS_RELEASE="$PKGDIR/tests/fixtures/os-mint" bash -c '. "$PKGDIR/bin/lib.sh"; detect_pm')" = "apt" ] || fail "mint not apt"
+[ "$(PKGDIR="$PKGDIR" MAID_OS_RELEASE="$PKGDIR/tests/fixtures/os-rocky" bash -c '. "$PKGDIR/bin/lib.sh"; detect_pm')" = "dnf" ] || fail "rocky not dnf"
+mkdir -p /tmp/mh-nopm
+[ "$(PKGDIR="$PKGDIR" MAID_OS_RELEASE="$PKGDIR/tests/fixtures/os-void" PATH=/tmp/mh-nopm "$BASH" -c '. "$PKGDIR/bin/lib.sh"; detect_pm')" = "none" ] || fail "void should be none"
+[ "$(PKGDIR="$PKGDIR" MAID_OS_RELEASE="$PKGDIR/tests/fixtures/os-nixos" PATH=/tmp/mh-nopm "$BASH" -c '. "$PKGDIR/bin/lib.sh"; detect_pm')" = "none" ] || fail "nixos should be none"
+rm -rf /tmp/mh-nopm
+ok "distro families"
+
+echo "== gamepad: none healthy, usb/bt need fix =="
+export GAMEPAD=none
+out=$(bash "$PKGDIR/bin/mod-gamepad.sh" check 2>&1); rc=$?
+[ "$rc" = "0" ] || fail "no gamepad should pass (rc=$rc)"
+export GAMEPAD=usb
+out=$(bash "$PKGDIR/bin/mod-gamepad.sh" check 2>&1); rc=$?
+[ "$rc" = "2" ] || fail "usb pad should need fix (rc=$rc)"
+echo "$out" | grep -q "Steam Input" || fail "steam note missing"
+export GAMEPAD=bt
+out=$(bash "$PKGDIR/bin/mod-gamepad.sh" check 2>&1); rc=$?
+[ "$rc" = "2" ] || fail "bt pad should need fix (rc=$rc)"
+ok "gamepad detect"
+
+echo "== flatpak + firmware =="
+export FLAT_STATE=/tmp/mh-flat; : > /tmp/mh-flat
+out=$(bash "$PKGDIR/bin/mod-flatpak.sh" check 2>&1); rc=$?
+[ "$rc" = "2" ] || fail "missing flathub should need fix (rc=$rc)"
+out=$(bash "$PKGDIR/bin/mod-flatpak.sh" fix 2>&1); rc=$?
+[ "$rc" = "0" ] || fail "flathub fix should pass (rc=$rc): $out"
+grep -q flathub /tmp/mh-flat || fail "remote not recorded"
+rm -f /tmp/mh-flat
+export FW_STATE=missing
+out=$(bash "$PKGDIR/bin/mod-firmware.sh" check 2>&1); rc=$?
+[ "$rc" = "2" ] || fail "missing fwupd should need fix (rc=$rc)"
+out=$(bash "$PKGDIR/bin/mod-firmware.sh" fix 2>&1); rc=$?
+[ "$rc" = "1" ] || fail "broken fwupd fix should fail honestly (rc=$rc)"
+echo "$out" | grep -q "FAILED - fwupd" || fail "fwupd failure not reported"
+export FW_STATE=ok
+out=$(bash "$PKGDIR/bin/mod-firmware.sh" check 2>&1); rc=$?
+[ "$rc" = "0" ] || fail "fwupd present should pass (rc=$rc)"
+ok "flatpak + firmware"
 
 echo "== print + fonts: healthy paths =="
 out=$(bash "$PKGDIR/bin/mod-print.sh" check 2>&1); rc=$?
@@ -78,6 +142,6 @@ ok "suite wholeness"
 
 echo "== cleanup =="
 rm -rf /tmp/maidhelp-t
-unset FF_DECODERS BT_CODECS NVIDIA_VGA
+unset FF_DECODERS BT_CODECS NVIDIA_VGA AMD_VGA AMD_RV GAMEPAD FLAT_STATE FW_STATE
 ok "cleanup"
 echo "ALL $PASS PASSED"
