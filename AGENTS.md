@@ -18,7 +18,10 @@ dependent on one.
 
 First-aid kit for new (and older) Linux users: codecs, GPU, printer,
 fonts. Detect, report, offer the fix. Android/Linux desktop only,
-like the rest of the suite.
+like the rest of the suite. Lowercase terse voice in docs (README,
+messages, popups).
+State live-vs-stub plainly: say what ran on real hardware versus the
+stub farm whenever reporting verification.
 
 ## Layout
 
