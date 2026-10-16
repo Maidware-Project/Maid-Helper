@@ -24,6 +24,8 @@ AI assistants alike). maintained by Maidware Project.
   in the PR (the template asks for them). tested on openSUSE; Arch
   and Fedora too if you can (VM or live USB counts — say which).
 - `bash install.sh --check` writes nothing
+- CI must be green before review — a green run on your machine is the
+  start, not the finish
 - hardware touched? say what device/distro you verified live
 - no personal data anywhere (MACs, names, IPs, home paths) — the
   suite enforces this, CI fails it
@@ -39,6 +41,8 @@ AI assistants alike). maintained by Maidware Project.
   does, where user configs live (~/.config). you don't need to be
   an expert — but this project ships scripts that run on people's
   machines, so guessing is not contributing.
+- reviewers here are people, not bots — expect to answer questions
+  about your patch. unattended drive-by or bot PRs get closed.
 
 ## issues
 
