@@ -32,9 +32,7 @@ done
 
 say() { echo "==> $*"; }
 BASE=""
-for b in "$BASES"; do
-  [ -d "$b" ] && { BASE="$b"; break; }
-done
+[ -d "$BASES" ] && BASE="$BASES"
 [ -n "$BASE" ] || { say "no checkout base found ($BASES) — create one first"; exit 2; }
 say "base: $BASE"
 
