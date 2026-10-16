@@ -20,14 +20,6 @@ codecs_ok() {
     || return 1
 }
 
-if codecs_ok; then
-  echo "ok - codecs play (mp3/aac/h264 decode in ffmpeg)"
-else
-  echo "NEEDS FIX - videos/music may not play (ffmpeg or decoders missing)"
-  [ "$MODE" = "fix" ] || exit 2
-  main_fix
-fi
-
 main_fix() {
   # base codec packages per distro; each reported honestly by install_pkgs
   ensure_sudo || exit 1
@@ -72,6 +64,14 @@ else
   exit 1
 fi
 } # main_fix
+
+if codecs_ok; then
+  echo "ok - codecs play (mp3/aac/h264 decode in ffmpeg)"
+else
+  echo "NEEDS FIX - videos/music may not play (ffmpeg or decoders missing)"
+  [ "$MODE" = "fix" ] || exit 2
+  main_fix
+fi
 
 # --- bluetooth audio codecs (Maid BT quality lock needs these offered) ---
 # Detect from the live card, never guess: LDAC/AAC profiles present?

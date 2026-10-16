@@ -9,6 +9,7 @@
 # "localdir|reponame" pairs: checkout names keep their spaces, GitHub
 # repos use hyphens (MHE/Maid-Helper is where Helper lives here).
 set -u
+set -o pipefail
 GITHUB="${MAID_GITHUB:-https://github.com/Maidware-Project}"
 if [ -n "${MAID_SUITE_BASE:-}" ]; then
   BASES="$MAID_SUITE_BASE"
@@ -31,7 +32,7 @@ done
 
 say() { echo "==> $*"; }
 BASE=""
-for b in $BASES; do
+for b in "$BASES"; do
   [ -d "$b" ] && { BASE="$b"; break; }
 done
 [ -n "$BASE" ] || { say "no checkout base found ($BASES) — create one first"; exit 2; }
