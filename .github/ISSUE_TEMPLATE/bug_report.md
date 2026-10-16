@@ -20,4 +20,8 @@ title: "[bug] "
 ```
 maid-helper --check
 ```
-<!-- run `maid-helper --check`, paste the whole block below -->
+<!-- run `maid-helper --check`, paste the whole block below. attaching logs/screenshots is mandatory if they exist. -->
+
+---
+
+**note:** before filing, please read `AGENTS.md` in this repo - it's there for a reason.
