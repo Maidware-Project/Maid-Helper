@@ -12,9 +12,6 @@ AI assistants alike). maintained by Maidware Project.
 - sign off every commit (`git commit -s` appends it):
   `Signed-off-by: Your Name <you@example.com>`
   (developer's certificate of origin — proves you may contribute it)
-- AI-assisted work gets an `Assisted-by:` trailer naming the tool,
-  e.g. `Assisted-by: opencode (muse-spark)`. the kernel requires this;
-  so do we. never claim a test ran that didn't.
 - bug fixes reference what they fix: `Fixes: #123` or
   `Closes: #123` (issue number, or the symptom if no issue exists).
 

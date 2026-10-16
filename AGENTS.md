@@ -47,8 +47,7 @@ stub farm whenever reporting verification.
   technical scope, no politics, stay neutral.
 - Commits: short lowercase summaries with a prefix (`fix:`, `feat:`, `docs:`,
   `tests:`, `chore:`), one logical change each. Sign off every commit
-  (`git commit -s`); AI-assisted work adds an `Assisted-by:` trailer
-  naming the tool. Bug fixes cite `Fixes: #N`.
+  (`git commit -s`). Bug fixes cite `Fixes: #N`.
 - `--check` reports, changes nothing. `--fix` is the only path that
   installs anything or restarts anything. Manual steps (reboot, MOK
   password, test page) are printed, never performed silently.
