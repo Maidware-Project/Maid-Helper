@@ -1,9 +1,6 @@
-# Maid Helper — first-aid kit for linux
+# maid helper
 
-new (and older) linux users hit the same walls: videos won't play,
-the GPU sits idle, the printer won't print, fonts look wrong, gamepads
-do nothing, flatpak has nowhere to install from, firmware never
-updates. this checks the lot and fixes what it safely can.
+command-line helper. first-aid kit for small linux breakage. checks common issues and fixes what it safely can. on-demand, no daemon. only changes what it can safely fix, never installs proprietary drivers, and prints bootloader edits to run by hand.
 
 ## quick start
 
