@@ -23,7 +23,8 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-MODULES="codecs gpu print fonts suite gamepad flatpak firmware"
+ALL_MODULES="codecs gpu print fonts suite gamepad flatpak firmware"
+MODULES="$ALL_MODULES"
 if [ -n "$ONLY" ]; then
   MODULES=$(echo "$ONLY" | tr ',' ' ')
 fi
@@ -36,7 +37,7 @@ export MSFONTS="${MSFONTS:-0}"
 FAILED=0; NEEDS=0
 for m in $MODULES; do
   mod="$BINDIR/mod-$m.sh"
-  [ -f "$mod" ] || { echo "unknown module: $m (codecs/gpu/print/fonts)"; FAILED=1; continue; }
+  [ -f "$mod" ] || { echo "unknown module: $m ($ALL_MODULES)"; FAILED=1; continue; }
   echo "--- $m ---"
   if bash "$mod" "$MODE"; then :; else
     rc=$?

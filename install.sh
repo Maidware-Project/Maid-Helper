@@ -129,8 +129,9 @@ copy_one() {
   echo "installed $dest"
 }
 
+COPY_FAILED=0
 for f in maid-helper maid-helper-run lib.sh mod-codecs.sh mod-gpu.sh mod-print.sh mod-fonts.sh mod-suite.sh mod-gamepad.sh mod-flatpak.sh mod-firmware.sh; do
-  copy_one "$PKGDIR/bin/$f" "$BINDIR/$f"
+  copy_one "$PKGDIR/bin/$f" "$BINDIR/$f" || COPY_FAILED=1
 done
 [ "$CHECK" = "0" ] && chmod +x "$BINDIR"/maid-helper "$BINDIR"/maid-helper-run 2>/dev/null || true
 
@@ -144,6 +145,10 @@ for f in "$PKGDIR"/desktop/*.svg; do
 done
 
 if [ "$CHECK" = "1" ]; then say "(check only, nothing changed)"; exit 0; fi
+if [ "$COPY_FAILED" != "0" ]; then
+  warn "some files failed to copy — install incomplete (see above)"
+  exit 1
+fi
 command -v kbuildsycoca6 >/dev/null 2>&1 && kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
 
 say "done. Backups (if any): *.bak-${BACKUP_TS}"
