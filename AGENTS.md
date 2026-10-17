@@ -67,6 +67,19 @@ stub farm whenever reporting verification.
   missing package, never claims success it didn't verify.
 - Never hold packages; never auto-enroll Secure Boot keys.
 
+## Principles
+
+Keep it simple ([KISS](https://en.wikipedia.org/wiki/KISS_principle)) and
+boring. In practice:
+
+- The smallest change that solves the problem; nothing added "for later"
+  (YAGNI).
+- One place owns each fact; no repeated logic (DRY).
+- Each tool does one thing well and composes (unix philosophy, rule of
+  least power).
+- Readable beats clever; less is more (worse is better).
+- Delete what nothing needs instead of keeping it around.
+
 ## Never
 
 - Never push. The maintainer pushes; commits stay local until asked.
