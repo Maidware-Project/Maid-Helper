@@ -1,0 +1,5 @@
+#!/bin/bash
+# fake desktop terminal default for the launcher test. FAKE_TERMAPP sets
+# the value; the default points at a terminal that does not exist, so the
+# launcher must fall back to one that does.
+echo "${FAKE_TERMAPP:-doesnotexist --nowhere}"

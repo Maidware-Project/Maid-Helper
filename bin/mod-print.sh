@@ -20,7 +20,14 @@ print_ok() {
 }
 
 if print_ok; then
-  lpstat -p -d 2>/dev/null | head -n 3
+  lpstat -p 2>/dev/null | head -n 3
+  # lpstat's raw "no system default destination" reads like an error on a
+  # fresh box; it just means no printer has been set up yet
+  if lpstat -d 2>/dev/null | grep -q "no system default"; then
+    echo "note - no default printer set up (the print settings can add one)"
+  else
+    lpstat -d 2>/dev/null
+  fi
   echo "ok - CUPS running and enabled"
   exit 0
 fi

@@ -26,14 +26,19 @@ term_flag() {
   esac
 }
 pick_term() {
-  local app="" name=""
+  local app="" name="" first=""
   if command -v xdg-terminal-exec >/dev/null 2>&1; then echo "xdg-terminal-exec"; return; fi
   if [ -n "${TERMINAL:-}" ] && command -v "${TERMINAL%% *}" >/dev/null 2>&1; then app="$TERMINAL"; fi
   [ -n "$app" ] || app=$(desktop_term)
   if [ -n "$app" ]; then
-    name=$(basename "${app%% *}")
-    echo "$name $(term_flag "$name")"
-    return
+    # the desktop default only counts if it is really installed —
+    # kreadconfig/gsettings happily point at long-gone terminals
+    first="${app%% *}"
+    if command -v "$first" >/dev/null 2>&1; then
+      name=$(basename "$first")
+      echo "$name $(term_flag "$name")"
+      return
+    fi
   fi
   for t in alacritty foot ghostty kitty konsole qterminal tilix wezterm xfce4-terminal gnome-terminal xterm; do
     command -v "$t" >/dev/null 2>&1 || continue
@@ -51,5 +56,12 @@ if [ -z "$TERM_CMD" ]; then
   echo "No terminal found (install xdg-terminal-exec, or set \$TERMINAL)." >&2
   exit 1
 fi
+# keep the window open so the report is readable; when the check found
+# trouble, offer the safe fixes right there (sudo asks inside). a run that
+# was already --fix just waits.
+OFFER_FIX=1
+case " $* " in *" --fix "*) OFFER_FIX=0 ;; esac
+export OFFER_FIX
+KEEP_OPEN='"$0" "$@"; rc=$?; echo; if [ "$rc" = "2" ] && [ "$OFFER_FIX" = "1" ]; then read -r -p "apply the safe fixes now (sudo asks inside)? [y/N] " ans; case "$ans" in [Yy]*) "$0" --fix; rc=$? ;; esac; echo; fi; read -r -p "press enter to close " _; exit "$rc"'
 # shellcheck disable=SC2086
-exec $TERM_CMD "$BIN" "$@"
+exec $TERM_CMD bash -c "$KEEP_OPEN" "$BIN" "$@"

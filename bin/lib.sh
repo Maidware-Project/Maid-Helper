@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 # Maid Helper shared bits. Sourced by maid-helper and mod-*.sh, never run.
-# Expects BINDIR (module dir) and LOG (log file) from the caller.
+# Expects BINDIR (module dir) from the caller.
 # shellcheck disable=SC2034
 HELPER_LIB_LOADED=1
-
-log() { echo "$*" >> "$LOG"; }
-say() { echo "$*"; log "$*"; }
 
 have() { command -v "$1" >/dev/null 2>&1; }
 

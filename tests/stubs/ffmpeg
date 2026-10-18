@@ -1,8 +1,13 @@
 #!/bin/bash
-# FF_DECODERS=full -> mp3/aac/h264 present; anything else -> bare
+# FF_DECODERS=full -> mp3/aac/h264 decoders present, like a real ffmpeg.
+# libmp3lame is encoder-only: -decoders never lists it, so faking it there
+# once hid a broken check (it grepped decoders for the encoder's name).
 case "$*" in
   *-decoders*)
-    [ "${FF_DECODERS:-}" = "full" ] && printf ' ... libmp3lame\n ... aac \n ... h264 \n'
+    [ "${FF_DECODERS:-}" = "full" ] && printf ' A....D mp3float             MP3 (MPEG audio layer 3) (codec mp3)\n A....D aac                  AAC (Advanced Audio Coding)\n VFS..D h264                 H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10\n'
+    ;;
+  *-encoders*)
+    printf ' A....D libmp3lame\n'
     ;;
 esac
 exit 0

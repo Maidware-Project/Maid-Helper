@@ -15,9 +15,13 @@ MODE="${1:-check}"
 
 codecs_ok() {
   have ffmpeg || return 1
-  ffmpeg -hide_banner -decoders 2>/dev/null | grep -q "libmp3lame" \
-    && ffmpeg -hide_banner -decoders 2>/dev/null | grep -qE " aac | h264 " \
-    || return 1
+  # decoders, not encoders: libmp3lame is encoder-only and never shows in
+  # -decoders — asking for it there flagged healthy systems as broken.
+  local dec
+  dec=$(ffmpeg -hide_banner -decoders 2>/dev/null) || return 1
+  echo "$dec" | grep -qE " mp3(float)?( |$)" \
+    && echo "$dec" | grep -qE " aac( |$)" \
+    && echo "$dec" | grep -qE " h264( |$)"
 }
 
 main_fix() {

@@ -1,6 +1,14 @@
 #!/bin/bash
+# FAKE_DEFAULT=none -> no default printer set up
 case "$*" in
   *-r*) echo "scheduler is running" ;;
+  *-d*)
+    if [ "${FAKE_DEFAULT:-}" = "none" ]; then
+      echo "no system default destination"
+    else
+      echo "system default destination: FakePrinter"
+    fi
+    ;;
   *) echo "printer FakePrinter idle" ;;
 esac
 exit 0

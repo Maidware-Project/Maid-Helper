@@ -57,6 +57,10 @@ maid-helper --only codecs     # one module: codecs|gpu|print|fonts|suite|gamepad
 
 exit codes: `0` healthy/fixed, `2` needs attention, anything else failed.
 
+the app menu entry ("Maid Helper") runs the check in a terminal and keeps
+the window open for reading; when it found trouble it offers the safe
+fixes right there. every run appends to `~/.local/share/maid-helper.log`.
+
 ## fully open source, floss compliant
 
 MIT, like the rest of the suite. non-free software never installs

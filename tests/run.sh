@@ -49,18 +49,26 @@ HOME=/tmp/maidhelp-i bash "$PKGDIR/install.sh" --uninstall --purge </dev/null >/
 rm -rf /tmp/maidhelp-i
 ok "installer covers every module + uninstall"
 
-echo "== launcher picks ghostty, passes args =="
+echo "== launcher: dead default skipped, window stays, args passed =="
 rm -f /tmp/mh-term.log
 HOME=/tmp/maidhelp-t PATH="$STUBS:/usr/bin:/bin" bash "$PKGDIR/bin/maid-helper-run" --only suite --check > /tmp/mh-term-out.txt 2>&1
-grep -q "TERM_LAUNCH: -e .*maid-helper --only suite --check" /tmp/mh-term.log || fail "launcher did not exec terminal correctly"
+grep -q "TERM_LAUNCH: -e .*maid-helper --only suite --check" /tmp/mh-term.log || fail "launcher did not fall back to a real terminal"
+grep -q "press enter to close" /tmp/mh-term.log || fail "launcher window would close instantly"
+grep -q "safe fixes" /tmp/mh-term.log || fail "launcher does not offer the fixes"
+rm -f /tmp/mh-term.log
+FAKE_TERMAPP=myterm HOME=/tmp/maidhelp-t PATH="$STUBS:/usr/bin:/bin" bash "$PKGDIR/bin/maid-helper-run" --only suite --check > /tmp/mh-term-out.txt 2>&1
+grep -q "MYTERM: -e .*maid-helper --only suite --check" /tmp/mh-term.log || fail "usable desktop default ignored"
 rm -f /tmp/mh-term.log /tmp/mh-term-out.txt
-ok "launcher picks ghostty"
+ok "launcher picks terminal"
 
-echo "== dispatcher: check reports, unknown rejected =="
+echo "== dispatcher: check reports, unknown rejected, run logged =="
 export PATH="$STUBS:/usr/bin:/bin"
 export HOME=/tmp/maidhelp-t
 out=$(bash "$PKGDIR/bin/maid-helper" --check 2>&1)
 echo "$out" | grep -q "result:" || fail "no result line"
+[ -s /tmp/maidhelp-t/.local/share/maid-helper.log ] || fail "run log not written"
+grep -q "^===== maid-helper check " /tmp/maidhelp-t/.local/share/maid-helper.log || fail "log missing run header"
+grep -q -- "--- codecs ---" /tmp/maidhelp-t/.local/share/maid-helper.log || fail "log missing module output"
 bash "$PKGDIR/bin/maid-helper" --only bogus --check >/dev/null 2>&1 && fail "bogus module accepted"
 ok "dispatcher contract"
 
@@ -157,6 +165,9 @@ ok "flatpak + firmware"
 echo "== print + fonts: healthy paths =="
 out=$(bash "$PKGDIR/bin/mod-print.sh" check 2>&1); rc=$?
 [ "$rc" = "0" ] || fail "print check should pass (rc=$rc)"
+out=$(FAKE_DEFAULT=none bash "$PKGDIR/bin/mod-print.sh" check 2>&1); rc=$?
+[ "$rc" = "0" ] || fail "print check with no default printer should pass (rc=$rc)"
+echo "$out" | grep -q "no default printer" || fail "no-default-printer note missing"
 out=$(bash "$PKGDIR/bin/mod-fonts.sh" check 2>&1); rc=$?
 [ "$rc" = "0" ] || fail "fonts check should pass (rc=$rc)"
 ok "print + fonts detect"

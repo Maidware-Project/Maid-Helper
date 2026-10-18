@@ -10,7 +10,11 @@ BINDIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1090,SC1091
 . "$BINDIR/lib.sh"
 LOG="$HOME/.local/share/maid-helper.log"
-mkdir -p "$(dirname "$LOG")"
+# logging must never break a run: a dead log dir means /dev/null, not an
+# error (tee would cut the pipe the modules are writing to)
+if ! mkdir -p "$(dirname "$LOG")" 2>/dev/null || [ ! -w "$(dirname "$LOG")" ]; then
+  LOG=/dev/null
+fi
 
 MODE=check; ONLY=""
 while [ $# -gt 0 ]; do
@@ -31,23 +35,25 @@ fi
 
 PM=$(detect_pm)
 [ "$PM" = "none" ] && { echo "unsupported distro (need pacman/apt/dnf/zypper)"; exit 2; }
-export PM BINDIR LOG
+export PM BINDIR
 export MSFONTS="${MSFONTS:-0}"
 
 FAILED=0; NEEDS=0
+# the readme promises a run log: everything below is mirrored there
+printf '===== maid-helper %s %s =====\n' "$MODE" "$(date '+%Y-%m-%d %H:%M')" | tee -a "$LOG"
 for m in $MODULES; do
   mod="$BINDIR/mod-$m.sh"
   [ -f "$mod" ] || { echo "unknown module: $m ($ALL_MODULES)"; FAILED=1; continue; }
-  echo "--- $m ---"
-  if bash "$mod" "$MODE"; then :; else
-    rc=$?
+  { echo "--- $m ---"; bash "$mod" "$MODE"; } 2>&1 | tee -a "$LOG"
+  rc=${PIPESTATUS[0]}
+  if [ "$rc" != "0" ]; then
     if [ "$rc" = "2" ]; then NEEDS=1; else FAILED=1; fi
   fi
 done
 # rc convention: 0 healthy/fixed, 2 needs attention, else failed
-if [ "$FAILED" != "0" ]; then echo "result: FAILED (see above)"; exit 1; fi
+if [ "$FAILED" != "0" ]; then echo "result: FAILED (see above)" | tee -a "$LOG"; exit 1; fi
 if [ "$NEEDS" != "0" ]; then
-  [ "$MODE" = "check" ] && echo "result: stuff needs fixing — rerun with --fix" || echo "result: stuff still needs attention (see above)"
+  [ "$MODE" = "check" ] && echo "result: stuff needs fixing — rerun with --fix" | tee -a "$LOG" || echo "result: stuff still needs attention (see above)" | tee -a "$LOG"
   exit 2
 fi
-echo "result: all healthy"
+echo "result: all healthy" | tee -a "$LOG"

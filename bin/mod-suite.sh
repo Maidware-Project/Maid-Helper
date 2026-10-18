@@ -40,11 +40,11 @@ fi
 # --- Maidshare: dispatcher + at least one backend usable ---
 if [ -x "$HOME/.local/bin/maidshare" ]; then
   backends=""
-  have kdeconnect-cli && backends="$backends kdeconnect"
-  have adb && backends="$backends adb"
-  have python3 && have openssl && backends="$backends http"
+  have kdeconnect-cli && backends="${backends:+$backends }kdeconnect"
+  have adb && backends="${backends:+$backends }adb"
+  have python3 && have openssl && backends="${backends:+$backends }http"
   if [ -n "$backends" ]; then
-    echo "ok - Maidshare installed (backends:$backends )"
+    echo "ok - Maidshare installed (backends: $backends)"
   else
     miss "Maidshare installed but no backend usable (need kdeconnect, adb, or python3+openssl)" \
       "sudo zypper install kdeconnect-kde # or android-tools, python3, openssl"

@@ -1,5 +1,24 @@
 # changelog
 
+## fixes: an honest codecs check, a window you can read
+
+- codecs: the check asked ffmpeg's *decoder* list for libmp3lame — an
+  encoder only — so healthy systems were told "NEEDS FIX - videos/music
+  may not play". it now checks the decoders that matter (mp3/aac/h264),
+  and the stub farm fakes real ffmpeg output so the old bug can't hide
+  behind the test again.
+- launcher: the terminal window no longer vanishes the moment the report
+  ends — it waits for enter, and when the check found trouble it offers
+  to apply the safe fixes right there (sudo asks inside). a desktop
+  default terminal that is no longer installed now falls back instead of
+  failing silently.
+- dispatcher: the run log the readme and uninstaller promise
+  (`~/.local/share/maid-helper.log`) is finally written — run header,
+  every module's output, result line.
+- print: "no system default destination" is said in words instead of
+  leaking raw lpstat output; the Maidshare backend list loses its stray
+  trailing space.
+
 ## more doctors: gamepad, flatpak, firmware, AMD
 
 - new modules: gamepads (USB + bluetooth detect, Steam Input noted
