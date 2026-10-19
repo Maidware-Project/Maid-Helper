@@ -52,12 +52,15 @@ ok "installer covers every module + uninstall"
 echo "== launcher: dead default skipped, window stays, args passed =="
 rm -f /tmp/mh-term.log
 HOME=/tmp/maidhelp-t PATH="$STUBS:/usr/bin:/bin" bash "$PKGDIR/bin/maid-helper-run" --only suite --check > /tmp/mh-term-out.txt 2>&1
-grep -q "TERM_LAUNCH: -e .*maid-helper --only suite --check" /tmp/mh-term.log || fail "launcher did not fall back to a real terminal"
+grep -q "TERM_LAUNCH: -e .*maid-helper" /tmp/mh-term.log || fail "launcher did not fall back to a real terminal"
+grep -q "TERM_ARGS: --only suite --check" /tmp/mh-term.log || fail "launcher arguments did not reach the helper"
 grep -q "press enter to close" /tmp/mh-term.log || fail "launcher window would close instantly"
 grep -q "safe fixes" /tmp/mh-term.log || fail "launcher does not offer the fixes"
 rm -f /tmp/mh-term.log
 FAKE_TERMAPP=myterm HOME=/tmp/maidhelp-t PATH="$STUBS:/usr/bin:/bin" bash "$PKGDIR/bin/maid-helper-run" --only suite --check > /tmp/mh-term-out.txt 2>&1
-grep -q "MYTERM: -e .*maid-helper --only suite --check" /tmp/mh-term.log || fail "usable desktop default ignored"
+grep -q "MYTERM: -e .*maid-helper" /tmp/mh-term.log || fail "usable desktop default ignored"
+last_args=$(grep "TERM_ARGS:" /tmp/mh-term.log | tail -n 1)
+[ "$last_args" = "TERM_ARGS: --only suite --check" ] || fail "usable desktop default lost the arguments"
 rm -f /tmp/mh-term.log /tmp/mh-term-out.txt
 ok "launcher picks terminal"
 

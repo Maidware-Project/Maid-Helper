@@ -1,2 +1,3 @@
 #!/bin/bash
 echo "TERM_LAUNCH: $@" >> /tmp/mh-term.log
+echo "TERM_ARGS: ${HELPER_ARGS:-}" >> /tmp/mh-term.log
