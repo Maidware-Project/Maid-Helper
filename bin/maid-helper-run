@@ -62,6 +62,11 @@ fi
 OFFER_FIX=1
 case " $* " in *" --fix "*) OFFER_FIX=0 ;; esac
 export OFFER_FIX
-KEEP_OPEN='"$0" "$@"; rc=$?; echo; if [ "$rc" = "2" ] && [ "$OFFER_FIX" = "1" ]; then read -r -p "apply the safe fixes now (sudo asks inside)? [y/N] " ans; case "$ans" in [Yy]*) "$0" --fix; rc=$? ;; esac; echo; fi; read -r -p "press enter to close " _; exit "$rc"'
+# args travel in the environment, not in argv: some terminals rejoin the
+# command line and split it in the wrong places (a "--check" ended up as
+# "<bindir>/--check" once, reported 2026-10-19). the helper CLI is only
+# spaceless options (--check, --fix, --only=...), so this is safe.
+export HELPER_ARGS="$*"
+KEEP_OPEN='"$0" $HELPER_ARGS; rc=$?; echo; if [ "$rc" = "2" ] && [ "$OFFER_FIX" = "1" ]; then read -r -p "apply the safe fixes now (sudo asks inside)? [y/N] " ans; case "$ans" in [Yy]*) "$0" --fix; rc=$? ;; esac; echo; fi; read -r -p "press enter to close " _; exit "$rc"'
 # shellcheck disable=SC2086
-exec $TERM_CMD bash -c "$KEEP_OPEN" "$BIN" "$@"
+exec $TERM_CMD bash -c "$KEEP_OPEN" "$BIN"
