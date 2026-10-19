@@ -2,8 +2,8 @@
 
 small, reviewable changes only — one logical change per pull request
 (the kernel puts it well: one patch, one problem; if your description
-gets long, split it). read AGENTS.md first (it applies to humans and
-AI assistants alike). maintained by Maidware Project.
+gets long, split it). read README.md first (it covers the project and
+how it builds). maintained by Maidware Project.
 
 ## commits
 
@@ -31,9 +31,9 @@ AI assistants alike). maintained by Maidware Project.
 
 ## know your patch
 
-- understand every line you submit — including AI-written parts.
-  if you can't explain what a line does, don't send it. "the AI
-  wrote it" is never an explanation.
+- understand every line you submit.
+  if you can't explain what a line does, don't send it. "i didn't
+  write it" is never an explanation.
 - basic linux required: terminal use, file permissions, what sudo
   does, where user configs live (~/.config). you don't need to be
   an expert — but this project ships scripts that run on people's

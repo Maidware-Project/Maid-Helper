@@ -24,4 +24,4 @@ maid-helper --check
 
 ---
 
-**note:** before filing, please read `AGENTS.md` in this repo - it's there for a reason.
+**note:** before filing, please read `README.md` in this repo - it's there for a reason.
