@@ -101,7 +101,7 @@ for whatever setup you run.
 - `mod-codecs.sh` also checks bluetooth A2DP codecs off the live card,
   so Maid BT's quality lock has LDAC/AAC to lock onto.
 - `mod-suite.sh` checks the siblings are installed, configured, and
-  running (BT + watcher service, AU, Maidshare + a usable backend) —
+  running (BT + watcher service, AU, Maidshare + a usable backend) -
   and prints the exact install command for anything missing. it never
   installs siblings itself.
 

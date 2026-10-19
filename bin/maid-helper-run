@@ -31,7 +31,7 @@ pick_term() {
   if [ -n "${TERMINAL:-}" ] && command -v "${TERMINAL%% *}" >/dev/null 2>&1; then app="$TERMINAL"; fi
   [ -n "$app" ] || app=$(desktop_term)
   if [ -n "$app" ]; then
-    # the desktop default only counts if it is really installed —
+    # the desktop default only counts if it is really installed -
     # kreadconfig/gsettings happily point at long-gone terminals
     first="${app%% *}"
     if command -v "$first" >/dev/null 2>&1; then
