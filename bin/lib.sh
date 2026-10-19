@@ -9,7 +9,7 @@ have() { command -v "$1" >/dev/null 2>&1; }
 detect_pm() {
   # MAID_OS_RELEASE overrides the source (tests feed fixture files).
   # Derivatives ride their family via ID_LIKE (manjaro, pop, mint...).
-  # Unknown distros report none — callers print manual commands instead
+  # Unknown distros report none - callers print manual commands instead
   # of failing silently.
   local release="${MAID_OS_RELEASE:-/etc/os-release}"
   if [ -f "$release" ]; then
@@ -40,7 +40,7 @@ ensure_sudo() {
   sudo -v || { echo "need sudo for package installs" >&2; return 1; }
 }
 
-# consent "prompt" VAR — true if $VAR=1 or a tty says yes. Never true
+# consent "prompt" VAR - true if $VAR=1 or a tty says yes. Never true
 # non-interactive without the env var (safe default for scripts/CI).
 # Used before any non-free software (NVIDIA drivers, MS fonts).
 consent() {
@@ -56,7 +56,7 @@ consent() {
   case "$ans" in [Yy]*) return 0 ;; *) return 1 ;; esac
 }
 
-# install_pkgs pm pkg... — one call, then honest per-package report.
+# install_pkgs pm pkg... - one call, then honest per-package report.
 # echoes INSTALLED/FAILED lines; returns nonzero only if ALL failed.
 install_pkgs() {
   local pm="$1"; shift
@@ -66,7 +66,7 @@ install_pkgs() {
     apt) sudo apt-get update && sudo apt-get install -y "$@" ;;
     dnf) sudo dnf install -y "$@" ;;
     zypper) sudo zypper --non-interactive install "$@" ;;
-    *) echo "unsupported distro — install manually: $*"; return 1 ;;
+    *) echo "unsupported distro - install manually: $*"; return 1 ;;
   esac 2>&1 | tail -n 3
   local p ok=0
   for p in "$@"; do

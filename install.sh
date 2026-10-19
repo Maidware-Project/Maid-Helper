@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Universal installer: Arch (pacman), Debian/Ubuntu (apt), Fedora (dnf),
-# openSUSE (zypper). Copies files (no symlinks — survives folder moves).
+# openSUSE (zypper). Copies files (no symlinks - survives folder moves).
 # Usage: ./install.sh [--check] [--no-packages] [--uninstall [--purge]]
 #          [--prefix=DIR] [--no-config]
 # --prefix installs program files elsewhere (packaging: DESTDIR supported);
@@ -91,7 +91,7 @@ elif [ "$NO_PKGS" = "0" ]; then
     apt) REQ=(pciutils) ;;
     dnf) REQ=(pciutils) ;;
     zypper) REQ=(pciutils) ;;
-    *) warn "unsupported distro — install manually: pciutils (GPU detect)"; REQ=() ;;
+    *) warn "unsupported distro - install manually: pciutils (GPU detect)"; REQ=() ;;
   esac
   if [ "${#REQ[@]}" -gt 0 ]; then
     say "installing: ${REQ[*]}"
@@ -100,7 +100,7 @@ elif [ "$NO_PKGS" = "0" ]; then
       apt) sudo apt-get update && sudo apt-get install -y "${REQ[@]}" ;;
       dnf) sudo dnf install -y "${REQ[@]}" ;;
       zypper) sudo zypper --non-interactive install "${REQ[@]}" ;;
-    esac || warn "package install had errors — continuing (see README)"
+    esac || warn "package install had errors - continuing (see README)"
   fi
 else
   say "skipping packages (--no-packages)"
@@ -111,7 +111,7 @@ copy_one() {
   if [ "$CHECK" = "1" ]; then echo "COPY $dest"; return 0; fi
   mkdir -p "$(dirname "$dest")"
   # render first, compare second: $src still holds the Exec-path
-  # placeholder, which never equals an installed file — comparing raw
+  # placeholder, which never equals an installed file - comparing raw
   # would back up on every run. compare what we would write instead.
   tmp="$(mktemp)" || return 1
   if [ "$rewrite" = "1" ]; then
@@ -146,7 +146,7 @@ done
 
 if [ "$CHECK" = "1" ]; then say "(check only, nothing changed)"; exit 0; fi
 if [ "$COPY_FAILED" != "0" ]; then
-  warn "some files failed to copy — install incomplete (see above)"
+  warn "some files failed to copy - install incomplete (see above)"
   exit 1
 fi
 command -v kbuildsycoca6 >/dev/null 2>&1 && kbuildsycoca6 --noincremental >/dev/null 2>&1 || true

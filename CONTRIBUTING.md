@@ -1,6 +1,6 @@
 # contributing
 
-small, reviewable changes only — one logical change per pull request
+small, reviewable changes only - one logical change per pull request
 (the kernel puts it well: one patch, one problem; if your description
 gets long, split it). read README.md first (it covers the project and
 how it builds). maintained by Maidware Project.
@@ -8,23 +8,23 @@ how it builds). maintained by Maidware Project.
 ## commits
 
 - short lowercase summaries with a prefix: `fix:`, `feat:`, `docs:`,
-  `tests:`, `chore:` — e.g. `fix: retry bluetooth connect with backoff`
+  `tests:`, `chore:` - e.g. `fix: retry bluetooth connect with backoff`
 - sign off every commit (`git commit -s` appends it):
   `Signed-off-by: Your Name <you@example.com>`
-  (developer's certificate of origin — proves you may contribute it)
+  (developer's certificate of origin - proves you may contribute it)
 - bug fixes reference what they fix: `Fixes: #123` or
   `Closes: #123` (issue number, or the symptom if no issue exists).
 
 ## before opening anything
 
-- `bash tests/run.sh` green on your machine — paste the results
+- `bash tests/run.sh` green on your machine - paste the results
   in the PR (the template asks for them). tested on openSUSE; Arch
-  and Fedora too if you can (VM or live USB counts — say which).
+  and Fedora too if you can (VM or live USB counts - say which).
 - `bash install.sh --check` writes nothing
-- CI must be green before review — a green run on your machine is the
+- CI must be green before review - a green run on your machine is the
   start, not the finish
 - hardware touched? say what device/distro you verified live
-- no personal data anywhere (MACs, names, IPs, home paths) — the
+- no personal data anywhere (MACs, names, IPs, home paths) - the
   suite enforces this, CI fails it
 - lay out the fix: what broke, what you changed, why that way
 
@@ -36,9 +36,9 @@ how it builds). maintained by Maidware Project.
   write it" is never an explanation.
 - basic linux required: terminal use, file permissions, what sudo
   does, where user configs live (~/.config). you don't need to be
-  an expert — but this project ships scripts that run on people's
+  an expert - but this project ships scripts that run on people's
   machines, so guessing is not contributing.
-- reviewers here are people, not bots — expect to answer questions
+- reviewers here are people, not bots - expect to answer questions
   about your patch. unattended drive-by or bot PRs get closed.
 
 ## issues

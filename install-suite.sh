@@ -33,7 +33,7 @@ done
 say() { echo "==> $*"; }
 BASE=""
 [ -d "$BASES" ] && BASE="$BASES"
-[ -n "$BASE" ] || { say "no checkout base found ($BASES) — create one first"; exit 2; }
+[ -n "$BASE" ] || { say "no checkout base found ($BASES) - create one first"; exit 2; }
 say "base: $BASE"
 
 FAILED=0
@@ -46,7 +46,7 @@ while read -r pair; do
   d="$BASE/$dlocaldir"
   if [ ! -d "$d/.git" ]; then
     if [ -e "$d" ]; then
-      say "$dlocaldir: not a git checkout — left alone (move it aside to clone fresh)"
+      say "$dlocaldir: not a git checkout - left alone (move it aside to clone fresh)"
       continue
     fi
     say "$dlocaldir: cloning..."
@@ -82,7 +82,7 @@ while read -r pair; do
         say "$dlocaldir: updated."
       fi
     else
-      say "$dlocaldir: diverged or offline — left alone (pull by hand)."
+      say "$dlocaldir: diverged or offline - left alone (pull by hand)."
       continue
     fi
     [ "$CHECK" = "1" ] && continue
@@ -94,11 +94,11 @@ while read -r pair; do
     if bash "$d/install.sh" $NO_PKGS 2>&1 | tail -n 2; then
       say "$dlocaldir: installed."
     else
-      say "$dlocaldir: INSTALLER FAILED — run bash $d/install.sh by hand."
+      say "$dlocaldir: INSTALLER FAILED - run bash $d/install.sh by hand."
       FAILED=1
     fi
   else
-    say "$dlocaldir: no install.sh — skipping."
+    say "$dlocaldir: no install.sh - skipping."
   fi
 done <<< "$PAIRS"
 [ "$FAILED" = "0" ] && say "suite done." || { say "suite finished WITH FAILURES (see above)."; exit 1; }

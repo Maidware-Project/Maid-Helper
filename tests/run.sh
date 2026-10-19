@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Maid Helper test suite. Stub farm fakes package managers, detectors,
-# and sudo — safe anywhere, no root, no network, no real config touched.
+# and sudo - safe anywhere, no root, no network, no real config touched.
 # Exit nonzero on first failure.
 set -u
 PKGDIR="$(cd "$(dirname "$0")/.." && pwd)"

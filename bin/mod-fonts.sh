@@ -34,7 +34,7 @@ case "$PM" in
     ;;
   pacman)
     install_pkgs pacman noto-fonts noto-fonts-cjk noto-fonts-emoji || true
-    echo "note: MS fonts (ttf-ms-fonts) live in the AUR — install by hand if wanted"
+    echo "note: MS fonts (ttf-ms-fonts) live in the AUR - install by hand if wanted"
     ;;
   apt)
     install_pkgs apt fonts-noto-core fonts-noto-cjk fonts-noto-color-emoji || true
@@ -46,8 +46,8 @@ esac
 if consent "also install Microsoft core fonts (non-free EULA, Arial/Times)?" MSFONTS; then
   case "$PM" in
     zypper) install_pkgs zypper fetchmsttfonts || true ;;
-    dnf) echo "  Fedora: no repo package — fetch MS fonts by hand if wanted" ;;
-    pacman) echo "  Arch: ttf-ms-fonts lives in the AUR — install by hand if wanted" ;;
+    dnf) echo "  Fedora: no repo package - fetch MS fonts by hand if wanted" ;;
+    pacman) echo "  Arch: ttf-ms-fonts lives in the AUR - install by hand if wanted" ;;
     apt) echo "  run by hand (EULA screen appears): sudo apt install ttf-mscorefonts-installer" ;;
   esac
 else

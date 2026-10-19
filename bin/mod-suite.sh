@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Doctor: Maid suite wholeness (BT, AU, Maidshare, Watcher installed,
-# configured, running?). Never installs or fixes anything itself — prints
+# configured, running?). Never installs or fixes anything itself - prints
 # the exact command that does, so every sibling keeps its own autonomy.
 # check and fix behave the same (fix just re-checks). rc: 0 whole,
 # 2 something missing (with the command to fix it).

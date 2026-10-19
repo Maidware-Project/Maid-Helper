@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Doctor: GPUs on the open stack (Nouveau for NVIDIA, amdgpu for AMD).
-# Maid Helper does not install proprietary drivers, ever — no consent
+# Maid Helper does not install proprietary drivers, ever - no consent
 # flag, no vendor-driver commands printed either. ROCm/compute is out
 # of scope (gaming/desktop rendering only).
 # NVIDIA: Nouveau in use, nothing blacklisted, no nomodeset.

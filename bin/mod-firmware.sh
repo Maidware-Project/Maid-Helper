@@ -2,7 +2,7 @@
 # Doctor: firmware updates available (fwupd missing, so devices never get
 # firmware). Detect: fwupdmgr runs. Fix: install the package. Actually
 # refreshing/applying firmware stays manual (needs root + a reboot for
-# most devices) — printed, never performed.
+# most devices) - printed, never performed.
 # Usage: mod-firmware.sh check|fix. rc: 0 healthy/fixed, 2 needs attention.
 set -u
 here="$(cd "$(dirname "$0")" && pwd)"

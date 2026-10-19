@@ -1,4 +1,4 @@
-# Review checklist — pass all five before any change ships
+# Review checklist - pass all five before any change ships
 
 1. **Plain words.** Could a non-technical friend follow the README
    diff with no help? No jargon without an explanation next to it.

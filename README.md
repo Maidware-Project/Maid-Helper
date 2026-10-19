@@ -14,13 +14,13 @@ maid-helper --fix          # apply the safe fixes (sudo inside)
 
 that's exactly what this automates: the same per-distro package
 names and config checks the wikis list, as one read-only `--check`
-explaining each finding in plain words — then `--fix` does the safe
+explaining each finding in plain words - then `--fix` does the safe
 parts and prints the manual parts as exact commands. nothing hidden,
 nothing irreversible without asking.
 
 live-tested on openSUSE Tumbleweed (AMD); NVIDIA and other-distro
 paths ride the stub-farm suite + CI until real hardware confirms
-them — the suite tells you which is which.
+them - the suite tells you which is which.
 
 ```
 bin/maid-helper          dispatcher
@@ -64,12 +64,12 @@ fixes right there. every run appends to `~/.local/share/maid-helper.log`.
 ## fully open source, floss compliant
 
 MIT, like the rest of the suite. non-free software never installs
-here, period — no proprietary GPU path exists in this tool, and the
+here, period - no proprietary GPU path exists in this tool, and the
 single exception (Microsoft fonts) installs **only** with your
 explicit yes: a prompt on interactive terminals, or `MSFONTS=1`.
 without consent it prints the manual path and reports NEEDS ATTENTION
 instead. patent-encumbered codecs come from the community repos your
-distro already uses for this (Packman, RPM Fusion) — said plainly in
+distro already uses for this (Packman, RPM Fusion) - said plainly in
 the output, never hidden.
 
 ## what you need per distro
@@ -83,14 +83,14 @@ derivatives ride their family's backend automatically (`ID_LIKE`
 honored). anything else: `--check` still reports, and every fix path
 prints the manual commands instead of failing silently.
 
-no services here — runs on demand, so init doesn't matter. fork it
+no services here - runs on demand, so init doesn't matter. fork it
 for whatever setup you run.
 
 ## safety
 
 - `--check` never changes anything. `--fix` is the only path that
   installs or restarts.
-- every package install reports per-package success/fail — one stale
+- every package install reports per-package success/fail - one stale
   package name never fails the whole run silently.
 - reboot, Secure Boot key enrollment, bootloader edits, and test
   pages stay manual, printed as exact commands, never performed.
@@ -114,4 +114,4 @@ bash install.sh --uninstall --purge    # everything out including the log
 
 ## License
 
-MIT — see LICENSE. a Maidware Project, Forkable open source tools served to help
+MIT - see LICENSE. a Maidware Project, Forkable open source tools served to help

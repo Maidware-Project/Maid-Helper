@@ -4,7 +4,7 @@
 #   maid-helper --fix [--only a,b]      detect + apply fixes (sudo inside)
 # Modules: codecs, gpu, print, fonts. Fully open source (MIT); non-free
 # software (NVIDIA drivers, Microsoft fonts) installs only with explicit
-# consent — tty prompt, or NVIDIA_PROPRIETARY=1 / MSFONTS=1. No services.
+# consent - tty prompt, or NVIDIA_PROPRIETARY=1 / MSFONTS=1. No services.
 set -u
 BINDIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1090,SC1091
@@ -53,7 +53,7 @@ done
 # rc convention: 0 healthy/fixed, 2 needs attention, else failed
 if [ "$FAILED" != "0" ]; then echo "result: FAILED (see above)" | tee -a "$LOG"; exit 1; fi
 if [ "$NEEDS" != "0" ]; then
-  [ "$MODE" = "check" ] && echo "result: stuff needs fixing — rerun with --fix" | tee -a "$LOG" || echo "result: stuff still needs attention (see above)" | tee -a "$LOG"
+  [ "$MODE" = "check" ] && echo "result: stuff needs fixing - rerun with --fix" | tee -a "$LOG" || echo "result: stuff still needs attention (see above)" | tee -a "$LOG"
   exit 2
 fi
 echo "result: all healthy" | tee -a "$LOG"

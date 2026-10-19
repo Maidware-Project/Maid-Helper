@@ -2,10 +2,10 @@
 # Doctor: gamepads (Xbox/PlayStation/Switch/8BitDo pads with no driver).
 # Detect: USB VIDs + paired bluetooth names. If nothing found, healthy
 # (nothing to do). Steam Input already covers most pads with zero
-# drivers — said plainly before any package is suggested.
+# drivers - said plainly before any package is suggested.
 # openSUSE defers to Maid AU's setup-controllers.sh when present (its
 # stack, its rules); elsewhere per-distro best effort. Kernel-module
-# installs need a replug/reboot to verify — printed, never assumed.
+# installs need a replug/reboot to verify - printed, never assumed.
 # Usage: mod-gamepad.sh check|fix. rc: 0 healthy/fixed, 2 needs attention.
 set -u
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -35,7 +35,7 @@ echo "note: Steam Input already drives most of these with no drivers (Steam > Se
 echo "NEEDS FIX - gamepad drivers not ensured"
 [ "$MODE" = "fix" ] || exit 2
 
-# openSUSE: Maid AU owns this stack — defer, don't duplicate.
+# openSUSE: Maid AU owns this stack - defer, don't duplicate.
 if [ "$PM" = "zypper" ] && [ -x "$HOME/.local/bin/setup-controllers.sh" ]; then
   echo "delegating to Maid AU's controller stack..."
   if [ -t 0 ]; then
@@ -58,7 +58,7 @@ case "$PM" in
       have yay && helper=yay
       [ -z "$helper" ] && have paru && helper=paru
       if [ -z "$helper" ]; then
-        echo "  no AUR helper (yay/paru) — install one, then: yay -S xone-dkms xpadneo-dkms"
+        echo "  no AUR helper (yay/paru) - install one, then: yay -S xone-dkms xpadneo-dkms"
         exit 2
       fi
       $helper -S --needed --noconfirm xone-dkms xpadneo-dkms 2>&1 | tail -n 2 || true
@@ -69,9 +69,9 @@ case "$PM" in
     fi
     ;;
   dnf|apt)
-    echo "  no packaged drivers here — Steam Input covers these pads; vendor DKMS/COPR builds vary by kernel"
+    echo "  no packaged drivers here - Steam Input covers these pads; vendor DKMS/COPR builds vary by kernel"
     echo "  Fedora: check community COPR for xone/xpadneo matching your kernel"
-    echo "  Debian/Ubuntu: xpadneo-dkms exists in some releases — try: sudo apt install xpadneo-dkms"
+    echo "  Debian/Ubuntu: xpadneo-dkms exists in some releases - try: sudo apt install xpadneo-dkms"
     exit 2
     ;;
   *) echo "unsupported distro for gamepads"; exit 1 ;;

@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Something broke — tell it plainly, paste the check output
+about: Something broke - tell it plainly, paste the check output
 title: "[bug] "
 ---
 
@@ -15,7 +15,7 @@ title: "[bug] "
 - Maid Helper commit:
 - Distro + version:
 
-## Check output (paste this — trim anything personal)
+## Check output (paste this - trim anything personal)
 
 ```
 maid-helper --check
