@@ -88,7 +88,7 @@ while read -r pair; do
     [ "$CHECK" = "1" ] && continue
   fi
   [ "$PULLONLY" = "1" ] && continue
-  if [ -x "$d/install.sh" ]; then
+  if [ -f "$d/install.sh" ]; then
     say "$dlocaldir: installing..."
     # shellcheck disable=SC2086
     if bash "$d/install.sh" $NO_PKGS 2>&1 | tail -n 2; then
