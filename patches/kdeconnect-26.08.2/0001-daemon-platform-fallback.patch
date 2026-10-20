@@ -27,7 +27,7 @@ diff --git a/daemon/kdeconnectd.cpp b/daemon/kdeconnectd.cpp
 index 735cfbd68..dd8524816 100644
 --- a/daemon/kdeconnectd.cpp
 +++ b/daemon/kdeconnectd.cpp
-@@ -8,6 +8,7 @@
+@@ -9,6 +9,7 @@
  #include <QCommandLineOption>
  #include <QCommandLineParser>
  #include <QDBusMessage>
