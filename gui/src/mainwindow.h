@@ -8,6 +8,7 @@
 #include <QString>
 
 class QAction;
+class QApplication;
 class QCheckBox;
 class QCloseEvent;
 class QLabel;
@@ -26,10 +27,12 @@ public:
     ~MainWindow() override;
 
     void setOnlyModule(const QString &key);
+    void setScreenshotMode(bool enabled);
 
 public slots:
     void startCheck();
     void startFix();
+    void startQuality();
     void startReport();
 
 protected:
@@ -60,6 +63,7 @@ private:
     void setBusy(bool busy);
     void setStatus(const QString &title, const QString &detail, const QString &iconName);
     void appendOutput(const QString &text);
+    QString scriptLabel() const;
     void parseSections();
     void updateModuleIcons(int exitCode);
     void showModule(const QString &key);
@@ -74,10 +78,12 @@ private:
     QByteArray m_reportBuffer;
     bool m_checkCancelled = false;
     bool m_fixing = false;
+    bool m_qualityRun = false;
     bool m_reporting = false;
     bool m_busy = false;
     bool m_canFix = false;
     bool m_recheckAfterFix = false;
+    bool m_screenshotMode = false;
 
     QString m_onlyModule;
     QString m_helper;
@@ -102,6 +108,7 @@ private:
     QPushButton *m_checkButton = nullptr;
     QPushButton *m_fixButton = nullptr;
     QPushButton *m_cancelButton = nullptr;
+    QPushButton *m_qualityButton = nullptr;
     QPushButton *m_reportButton = nullptr;
     QPushButton *m_logButton = nullptr;
     QCheckBox *m_msfonts = nullptr;
@@ -113,3 +120,5 @@ private:
 
     QSettings m_settings;
 };
+
+void applyMaidwareTheme(QApplication *app);

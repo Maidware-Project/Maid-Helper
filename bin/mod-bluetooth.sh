@@ -4,7 +4,7 @@
 # PipeWire/Pulse, Maid BT user services, WirePlumber quality config, and
 # recent audit-log errors. Fix: only the safe, local parts (service/rfkill/
 # adapter/user units). MAC and sink choices stay manual.
-# Usage: mod-bluetooth.sh check|fix|report
+# Usage: mod-bluetooth.sh check|fix|quality|report
 # rc: 0 healthy/fixed, 2 needs attention, 1 failed.
 set -u
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -23,13 +23,100 @@ redact() {
   sed -E \
     -e "s|$HOME|~|g" \
     -e "s|$(hostname 2>/dev/null || echo unknown-host)|maid-pc|g" \
-    -e 's/([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/AA:BB:CC:DD:EE:FF/g'
+    -e 's/([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/AA:BB:CC:DD:EE:FF/g' \
+    -e 's/([0-9A-Fa-f]{2}_){5}[0-9A-Fa-f]{2}/AA_BB_CC_DD_EE_FF/g'
 }
 
 conf_get() {
   local key="$1"
   [ -f "$CONF" ] || return 0
   sed -n -E "s/^[[:space:]]*${key}=[\"']?([^\"']*)[\"']?[[:space:]]*$/\1/p" "$CONF" | tail -n 1
+}
+
+card_name() {
+  pactl list short cards 2>/dev/null | awk '/bluez_card/{print $2; exit}'
+}
+
+buds_connected() {
+  local mac
+  mac=$(conf_get BUDS_MAC)
+  [ -n "$mac" ] || return 1
+  bluetoothctl info "$mac" 2>/dev/null | grep -q 'Connected: yes'
+}
+
+active_profile() {
+  local card
+  card=$(card_name)
+  [ -n "$card" ] || return 0
+  pactl list cards 2>/dev/null \
+    | awk -v c="$card" '$0 ~ ("Name: " c) {p=1}
+        p && /Active Profile:/ {sub(/^[^:]*: /, ""); print; exit}'
+}
+
+bt_codec() {
+  pactl list sinks 2>/dev/null \
+    | awk '/Name: bluez_output/{p=1}
+        p && /api.bluez5.codec/ {gsub(/.*= "/, ""); gsub(/".*/, ""); print; exit}'
+}
+
+default_sink() {
+  pactl info 2>/dev/null | sed -n 's/^Default Sink: //p' | head -n 1
+}
+
+mic_busy() {
+  # A live call/recording owns a capture stream; never yank it to A2DP.
+  pactl list source-outputs 2>/dev/null | grep -q 'Corked: no'
+}
+
+toggle_bin() {
+  local t
+  for t in "$HOME/.local/bin/bluetooth-toggle.sh" /usr/bin/bluetooth-toggle.sh; do
+    [ -x "$t" ] && { printf '%s\n' "$t"; return 0; }
+  done
+  command -v bluetooth-toggle.sh 2>/dev/null || true
+}
+
+quality_conf() {
+  printf '%s\n' "$HOME/.config/wireplumber/wireplumber.conf.d/52-bt-max-quality.conf"
+}
+
+write_quality_config() {
+  local dest src=""
+  dest=$(quality_conf)
+  mkdir -p "$(dirname "$dest")" || return 1
+  for src in "$HOME/.local/share/maid-bt/52-bt-max-quality.conf" \
+             "/usr/share/maid-bt/52-bt-max-quality.conf"; do
+    [ -f "$src" ] && break
+    src=""
+  done
+  if [ -n "$src" ]; then
+    cp -a "$src" "$dest"
+  else
+    cat > "$dest" <<'EOF'
+# Maid BT: prefer LDAC, then AAC, high-bitpool SBC (XQ), stock SBC last.
+monitor.bluez.properties = {
+  bluez5.codecs = [ ldac aac sbc_xq sbc ]
+  bluez5.enable-sbc-xq = true
+}
+EOF
+  fi
+}
+
+set_quality_lock() {
+  local tmp
+  [ -f "$CONF" ] || return 1
+  tmp=$(mktemp) || return 1
+  awk '
+    BEGIN { done = 0 }
+    /^[[:space:]]*QUALITY_LOCK[[:space:]]*=/ {
+      print "QUALITY_LOCK=1"; done = 1; next
+    }
+    { print }
+    END { if (!done) print "QUALITY_LOCK=1" }
+  ' "$CONF" > "$tmp" || { rm -f "$tmp"; return 1; }
+  cp -a "$CONF" "$CONF.bak-$(date +%Y%m%d-%H%M%S)" 2>/dev/null || true
+  chmod --reference="$CONF" "$tmp" 2>/dev/null || true
+  mv "$tmp" "$CONF"
 }
 
 unit_installed() {
@@ -119,6 +206,18 @@ check_audio() {
     echo "NEEDS FIX - fallback speaker '$sink' is not present right now"
     NEED=1
   fi
+
+  if buds_connected; then
+    local out
+    out=$(default_sink)
+    if printf '%s\n' "$out" | grep -q '^bluez'; then
+      echo "OK - earbuds are the current audio output"
+    else
+      echo "NEEDS FIX - earbuds are connected but audio is routed elsewhere"
+      echo "  why: this is the 'connected but I hear nothing' state"
+      NEED=1
+    fi
+  fi
 }
 
 check_config() {
@@ -177,15 +276,57 @@ check_scripts() {
 
 check_quality() {
   echo "== Sound quality =="
-  if [ "$(conf_get QUALITY_LOCK)" != "1" ]; then
-    echo "OK - quality lock is off (LDAC is still offered when available)"
-    return
+  local profile codec lock conf
+  conf=$(quality_conf)
+  lock=$(conf_get QUALITY_LOCK)
+  if have pactl; then
+    profile=$(active_profile)
+    codec=$(bt_codec)
   fi
-  if [ -f "$HOME/.config/wireplumber/wireplumber.conf.d/52-bt-max-quality.conf" ]; then
-    echo "OK - max-quality WirePlumber config is installed"
+
+  if have pactl && buds_connected; then
+    case "$profile" in
+      headset-head-unit*)
+        if mic_busy; then
+          echo "OK - call profile is active because the microphone is in use"
+        else
+          echo "NEEDS FIX - thin headset/call profile is active with no microphone in use"
+          NEED=1
+        fi
+        ;;
+      a2dp-sink*)
+        if [ -n "$codec" ]; then
+          echo "OK - playback profile: a2dp ($codec)"
+        else
+          echo "OK - playback profile: a2dp"
+        fi
+        case "$codec" in
+          sbc)
+            echo "NOTE - SBC is active; Fix sound quality can prefer LDAC/AAC/SBC-XQ"
+            ;;
+          ldac)
+            echo "OK - LDAC is active"
+            ;;
+        esac
+        ;;
+      "")
+        echo "NOTE - earbuds are connected, but the audio card is not ready yet"
+        ;;
+    esac
   else
-    echo "NEEDS FIX - quality lock is on but the WirePlumber config is missing"
-    NEED=1
+    echo "NOTE - earbuds are not connected; codec check skipped"
+  fi
+
+  if [ "$lock" = "1" ]; then
+    if [ -f "$conf" ]; then
+      echo "OK - quality lock is on and the max-quality config is installed"
+    else
+      echo "NEEDS FIX - quality lock is on but the max-quality WirePlumber config is missing"
+      NEED=1
+    fi
+  else
+    echo "NOTE - quality lock is off (LDAC is still offered when available)"
+    [ -f "$conf" ] && echo "NOTE - max-quality config is present; set QUALITY_LOCK=1 to enforce LDAC after switches"
   fi
 }
 
@@ -254,26 +395,80 @@ do_fix() {
     fi
   done
 
-  if [ "$(conf_get QUALITY_LOCK)" = "1" ] \
-     && [ ! -f "$HOME/.config/wireplumber/wireplumber.conf.d/52-bt-max-quality.conf" ]; then
-    local cfg=""
-    for cfg in "$HOME/.local/share/maid-bt/52-bt-max-quality.conf" \
-               "/usr/share/maid-bt/52-bt-max-quality.conf"; do
-      [ -f "$cfg" ] && break
-      cfg=""
-    done
-    if [ -n "$cfg" ]; then
-      echo "- installing the max-quality WirePlumber config"
-      mkdir -p "$HOME/.config/wireplumber/wireplumber.conf.d"
-      cp -a "$cfg" "$HOME/.config/wireplumber/wireplumber.conf.d/52-bt-max-quality.conf"
+  if [ "$(conf_get QUALITY_LOCK)" = "1" ] && [ ! -f "$(quality_conf)" ]; then
+    echo "- installing the max-quality WirePlumber config"
+    if write_quality_config; then
       systemctl --user restart wireplumber.service 2>/dev/null || true
     else
-      echo "!! max-quality config source not found; reinstall Maid BT"
+      echo "!! could not write the max-quality config"
+    fi
+  fi
+
+  if buds_connected; then
+    local out toggle
+    out=$(default_sink)
+    if ! printf '%s\n' "$out" | grep -q '^bluez'; then
+      toggle=$(toggle_bin)
+      if [ -n "$toggle" ]; then
+        echo "- routing audio back to the earbuds"
+        timeout 45 "$toggle" on 2>&1 | tail -n 15 || true
+      else
+        echo "!! bluetooth-toggle.sh not found; reinstall Maid BT"
+      fi
     fi
   fi
 
   echo
   echo "Manual steps are printed as comments; nothing here changes your MAC or speaker choice."
+  echo "Rechecking..."
+  echo
+  do_check
+}
+
+do_quality() {
+  echo "Improving Bluetooth sound quality..."
+  echo
+  echo "- installing the max-quality WirePlumber config (LDAC -> AAC -> SBC-XQ -> SBC)"
+  if write_quality_config; then
+    echo "  written: $(quality_conf)"
+  else
+    echo "!! could not write the max-quality config"
+    exit 1
+  fi
+
+  if [ ! -f "$CONF" ]; then
+    echo "!! Maid BT config is missing; run the Maid BT installer first"
+    exit 1
+  fi
+  echo "- enabling QUALITY_LOCK=1"
+  if ! set_quality_lock; then
+    echo "!! could not update $CONF"
+    exit 1
+  fi
+  echo "  backed up the old config next to it"
+
+  echo "- restarting WirePlumber to load the codec ladder"
+  systemctl --user restart wireplumber.service 2>/dev/null || true
+
+  if ! buds_connected; then
+    echo
+    echo "NOTE - earbuds are not connected; the settings are ready for next time."
+  elif mic_busy; then
+    echo
+    echo "NOTE - a call or recording is using the microphone; not switching to A2DP now."
+  else
+    local toggle
+    toggle=$(toggle_bin)
+    echo
+    if [ -n "$toggle" ]; then
+      echo "- switching the earbuds back to A2DP / LDAC"
+      timeout 60 "$toggle" on 2>&1 | tail -n 20 || true
+    else
+      echo "!! bluetooth-toggle.sh not found; reinstall Maid BT"
+    fi
+  fi
+
+  echo
   echo "Rechecking..."
   echo
   do_check
@@ -335,6 +530,7 @@ do_report() {
 case "$MODE" in
   check) do_check ;;
   fix) do_fix ;;
+  quality) do_quality ;;
   report) do_report ;;
-  *) echo "unknown mode: $MODE (use check, fix, or report)" >&2; exit 2 ;;
+  *) echo "unknown mode: $MODE (use check, fix, quality, or report)" >&2; exit 2 ;;
 esac

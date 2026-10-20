@@ -31,11 +31,14 @@
 #include <QStandardPaths>
 #include <QStatusBar>
 #include <QStyle>
+#include <QStyleFactory>
 #include <QSysInfo>
 #include <QTextCursor>
 #include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
+
+#include <cstdio>
 
 namespace {
 constexpr int kStatusIconSize = 40;
@@ -55,6 +58,7 @@ const ModuleInfo kModules[] = {
     {"flatpak", "Flatpak"},
     {"firmware", "Firmware"},
     {"kdeconnect", "KDE Connect"},
+    {"bluetooth", "Bluetooth"},
 };
 
 QString cleanPath(const QString &path)
@@ -149,8 +153,12 @@ void MainWindow::setOnlyModule(const QString &key)
             m_checkButton->setText(QStringLiteral("Check Bluetooth"));
         if (m_fixButton)
             m_fixButton->setText(QStringLiteral("Fix Bluetooth issues"));
+        if (m_qualityButton)
+            m_qualityButton->setVisible(true);
         if (m_reportButton)
             m_reportButton->setVisible(true);
+        if (m_msfonts)
+            m_msfonts->setVisible(false);
     } else if (!key.isEmpty()) {
         setWindowTitle(QStringLiteral("Maid Helper - ") + moduleLabel(key));
     }
@@ -167,6 +175,18 @@ void MainWindow::setOnlyModule(const QString &key)
             selected = item;
     }
     m_modules->setCurrentItem(selected);
+}
+
+void MainWindow::setScreenshotMode(bool enabled)
+{
+    m_screenshotMode = enabled;
+    if (enabled) {
+        resize(1120, 760);
+        if (m_systemInfo) {
+            m_systemInfo->setText(QStringLiteral("Linux"));
+            m_footer->setText(QStringLiteral("Log: ~/.local/share/maid-helper.log"));
+        }
+    }
 }
 
 void MainWindow::findTools()
@@ -319,6 +339,7 @@ void MainWindow::buildUi()
     splitter->setChildrenCollapsible(false);
 
     auto *sidebar = new QFrame(splitter);
+    sidebar->setObjectName(QStringLiteral("sidebar"));
     sidebar->setFrameShape(QFrame::StyledPanel);
     auto *sidebarLayout = new QVBoxLayout(sidebar);
     sidebarLayout->setContentsMargins(12, 12, 12, 12);
@@ -366,16 +387,26 @@ void MainWindow::buildUi()
 
     auto *buttons = new QHBoxLayout;
     buttons->setSpacing(8);
-    m_checkButton = new QPushButton(statusIcon(QStringLiteral("unknown")),
+    m_checkButton = new QPushButton(QIcon::fromTheme(QStringLiteral("view-refresh")),
                                     QStringLiteral("Check again"), central);
+    m_checkButton->setObjectName(QStringLiteral("checkButton"));
     m_checkButton->setDefault(true);
     m_fixButton = new QPushButton(QIcon::fromTheme(QStringLiteral("tools-wizard")),
                                   QStringLiteral("Apply safe fixes"), central);
+    m_fixButton->setObjectName(QStringLiteral("fixButton"));
     m_fixButton->setEnabled(false);
     m_cancelButton = new QPushButton(QStringLiteral("Cancel"), central);
     m_cancelButton->setVisible(false);
+    m_qualityButton = new QPushButton(QIcon::fromTheme(QStringLiteral("audio-volume-high")),
+                                      QStringLiteral("Fix sound quality"), central);
+    m_qualityButton->setObjectName(QStringLiteral("qualityButton"));
+    m_qualityButton->setVisible(false);
+    m_qualityButton->setToolTip(QStringLiteral(
+        "Install the max-quality WirePlumber config, enable QUALITY_LOCK, and switch back to A2DP/LDAC. "
+        "A live call or recording is never interrupted."));
     m_reportButton = new QPushButton(QIcon::fromTheme(QStringLiteral("document-save")),
                                      QStringLiteral("Save support report"), central);
+    m_reportButton->setObjectName(QStringLiteral("reportButton"));
     m_reportButton->setVisible(false);
     m_reportButton->setToolTip(QStringLiteral(
         "Write a Bluetooth support report with the check result and recent logs. "
@@ -389,6 +420,7 @@ void MainWindow::buildUi()
 
     buttons->addWidget(m_checkButton);
     buttons->addWidget(m_fixButton);
+    buttons->addWidget(m_qualityButton);
     buttons->addWidget(m_cancelButton);
     buttons->addWidget(m_reportButton);
     buttons->addStretch(1);
@@ -418,6 +450,7 @@ void MainWindow::buildUi()
 
     connect(m_checkButton, &QPushButton::clicked, this, &MainWindow::startCheck);
     connect(m_fixButton, &QPushButton::clicked, this, &MainWindow::startFix);
+    connect(m_qualityButton, &QPushButton::clicked, this, &MainWindow::startQuality);
     connect(m_cancelButton, &QPushButton::clicked, this, &MainWindow::cancelRun);
     connect(m_reportButton, &QPushButton::clicked, this, &MainWindow::startReport);
     connect(m_logButton, &QPushButton::clicked, this, &MainWindow::openLog);
@@ -467,6 +500,7 @@ void MainWindow::setBusy(bool busy)
     m_busy = busy;
     m_checkButton->setEnabled(!busy);
     m_fixButton->setEnabled(!busy && !m_fixing && m_canFix);
+    m_qualityButton->setEnabled(!busy);
     m_reportButton->setEnabled(!busy);
     m_cancelButton->setVisible(busy && !m_fixing && !m_reporting);
     m_cancelButton->setEnabled(busy && !m_fixing && !m_reporting);
@@ -497,6 +531,11 @@ void MainWindow::setStatus(const QString &title, const QString &detail,
     else if (iconName.contains(QStringLiteral("emblem-default")))
         kind = QStringLiteral("ok");
     m_statusIcon->setPixmap(statusIcon(kind).pixmap(kStatusIconSize, kStatusIconSize));
+}
+
+QString MainWindow::scriptLabel() const
+{
+    return m_screenshotMode ? QStringLiteral("~/.local/bin/maid-helper") : m_helper;
 }
 
 void MainWindow::appendOutput(const QString &text)
@@ -533,10 +572,11 @@ void MainWindow::startCheck()
         m_modules->item(i)->setToolTip(QStringLiteral("Checking..."));
     }
 
-    appendOutput(QStringLiteral("Running: %1 --check\n\n").arg(m_helper));
+    appendOutput(QStringLiteral("Running: %1 --check\n\n").arg(scriptLabel()));
     m_busy = true;
     m_reporting = false;
     m_fixing = false;
+    m_qualityRun = false;
     setBusy(true);
     setStatus(QStringLiteral("Checking for problems..."),
               QStringLiteral("Reading the system, installed packages, services, and configuration. This is read-only."),
@@ -615,7 +655,16 @@ void MainWindow::checkFinished(int exitCode, QProcess::ExitStatus status)
     m_fullOutput = QString::fromLocal8Bit(m_checkBuffer);
     parseSections();
     updateModuleIcons(exitCode);
-    m_modules->setCurrentRow(0);
+    int targetRow = 0;
+    if (!m_onlyModule.isEmpty()) {
+        for (int i = 1; i < m_modules->count(); ++i) {
+            if (m_modules->item(i)->data(Qt::UserRole).toString() == m_onlyModule) {
+                targetRow = i;
+                break;
+            }
+        }
+    }
+    m_modules->setCurrentRow(targetRow);
     refreshOutput();
     setBusy(false);
 
@@ -637,7 +686,9 @@ void MainWindow::checkFinished(int exitCode, QProcess::ExitStatus status)
                   QStringLiteral("emblem-default"));
     } else if (exitCode == 2) {
         setStatus(QStringLiteral("Some things need attention"),
-                  QStringLiteral("Review the report, then apply the safe fixes. Non-free Microsoft fonts stay opt-in."),
+                  m_onlyModule == QLatin1String("bluetooth")
+                      ? QStringLiteral("Review the report, then apply the safe Bluetooth fixes. Your earbuds and speaker choices stay manual.")
+                      : QStringLiteral("Review the report, then apply the safe fixes. Non-free Microsoft fonts stay opt-in."),
                   QStringLiteral("dialog-warning"));
     } else {
         setStatus(QStringLiteral("Check found a problem"),
@@ -706,13 +757,14 @@ void MainWindow::startFix()
         return;
 
     m_fixing = true;
+    m_qualityRun = false;
     m_reporting = false;
     m_canFix = false;
     m_fixBuffer.clear();
     m_fullOutput.clear();
     m_sections.clear();
     m_output->clear();
-    appendOutput(QStringLiteral("Running: %1 --fix\n\n").arg(m_helper));
+    appendOutput(QStringLiteral("Running: %1 --fix\n\n").arg(scriptLabel()));
     m_busy = true;
     setBusy(true);
     setStatus(QStringLiteral("Applying safe fixes..."),
@@ -780,7 +832,16 @@ void MainWindow::fixFinished(int exitCode, QProcess::ExitStatus status)
     m_fullOutput = QString::fromLocal8Bit(m_fixBuffer);
     parseSections();
     updateModuleIcons(exitCode);
-    m_modules->setCurrentRow(0);
+    int targetRow = 0;
+    if (!m_onlyModule.isEmpty()) {
+        for (int i = 1; i < m_modules->count(); ++i) {
+            if (m_modules->item(i)->data(Qt::UserRole).toString() == m_onlyModule) {
+                targetRow = i;
+                break;
+            }
+        }
+    }
+    m_modules->setCurrentRow(targetRow);
     refreshOutput();
     setBusy(false);
 
@@ -790,11 +851,15 @@ void MainWindow::fixFinished(int exitCode, QProcess::ExitStatus status)
                   QStringLiteral("dialog-error"));
         QApplication::alert(this);
     } else if (exitCode == 0) {
-        setStatus(QStringLiteral("Fixes applied"),
-                  QStringLiteral("The safe fixes finished. Run Check again to confirm the new state."),
+        setStatus(m_qualityRun ? QStringLiteral("Sound quality fixed")
+                               : QStringLiteral("Fixes applied"),
+                  m_qualityRun
+                      ? QStringLiteral("Max-quality config and QUALITY_LOCK are active. A2DP/LDAC was applied when possible.")
+                      : QStringLiteral("The safe fixes finished. Run Check again to confirm the new state."),
                   QStringLiteral("emblem-default"));
     } else if (exitCode == 2) {
-        setStatus(QStringLiteral("Fixes applied - some items remain"),
+        setStatus(m_qualityRun ? QStringLiteral("Sound quality updated - one item remains")
+                               : QStringLiteral("Fixes applied - some items remain"),
                   QStringLiteral("This usually means a reboot is needed or a manual step remains. Read the report; run Check again to see what is left."),
                   QStringLiteral("dialog-warning"));
     } else {
@@ -804,8 +869,10 @@ void MainWindow::fixFinished(int exitCode, QProcess::ExitStatus status)
         QApplication::alert(this);
     }
 
-    m_lastRun->setText(QStringLiteral("Last fix: ")
+    m_lastRun->setText((m_qualityRun ? QStringLiteral("Last quality fix: ")
+                                     : QStringLiteral("Last fix: "))
                        + QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm")));
+    m_qualityRun = false;
 }
 
 void MainWindow::fixFailed(QProcess::ProcessError error)
@@ -821,12 +888,65 @@ void MainWindow::fixFailed(QProcess::ProcessError error)
     m_fix->deleteLater();
     m_fix = nullptr;
     m_fixing = false;
+    m_qualityRun = false;
     m_busy = false;
     m_canFix = false;
     setBusy(false);
     appendOutput(message + QLatin1Char('\n'));
     setStatus(QStringLiteral("Fixes failed"), message, QStringLiteral("dialog-error"));
     showError(QStringLiteral("Fixes failed"), message);
+}
+
+void MainWindow::startQuality()
+{
+    if (m_busy || m_fixing)
+        return;
+
+    if (m_helper.isEmpty()) {
+        showError(QStringLiteral("Helper not found"),
+                  QStringLiteral("maid-helper was not found next to this app or in ~/.local/bin. Run install.sh first."));
+        return;
+    }
+
+    const auto answer = QMessageBox::question(
+        this, QStringLiteral("Fix sound quality"),
+        QStringLiteral("This installs the max-quality WirePlumber config, sets QUALITY_LOCK=1, "
+                       "restarts WirePlumber, and moves the earbuds back to A2DP/LDAC. "
+                       "It will not interrupt a live call or recording.\n\nContinue?"),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (answer != QMessageBox::Yes)
+        return;
+
+    m_qualityRun = true;
+    m_fixing = true;
+    m_reporting = false;
+    m_canFix = false;
+    m_fixBuffer.clear();
+    m_fullOutput.clear();
+    m_sections.clear();
+    m_output->clear();
+    appendOutput(QStringLiteral("Running: %1 --quality\n\n").arg(scriptLabel()));
+    m_busy = true;
+    setBusy(true);
+    setStatus(QStringLiteral("Improving sound quality..."),
+              QStringLiteral("Installing the LDAC-first codec ladder and switching the earbuds back to A2DP. "
+                             "This can take a few seconds; a call mic is never touched."),
+              QStringLiteral("audio-volume-high"));
+
+    m_fix = new QProcess(this);
+    m_fix->setProcessChannelMode(QProcess::MergedChannels);
+    m_fix->setWorkingDirectory(QDir::homePath());
+    m_fix->setProcessEnvironment(QProcessEnvironment::systemEnvironment());
+
+    connect(m_fix, &QProcess::readyReadStandardOutput,
+            this, &MainWindow::readFixOutput);
+    connect(m_fix, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &MainWindow::fixFinished);
+    connect(m_fix, &QProcess::errorOccurred,
+            this, &MainWindow::fixFailed);
+
+    m_fix->start(m_helper, QStringList{QStringLiteral("--quality")});
+    m_fix->closeWriteChannel();
 }
 
 void MainWindow::startReport()
@@ -842,10 +962,11 @@ void MainWindow::startReport()
 
     m_reporting = true;
     m_fixing = false;
+    m_qualityRun = false;
     m_canFix = false;
     m_reportBuffer.clear();
     m_output->clear();
-    appendOutput(QStringLiteral("Running: %1 --report\n\n").arg(m_helper));
+    appendOutput(QStringLiteral("Running: %1 --report\n\n").arg(scriptLabel()));
     m_busy = true;
     setBusy(true);
     setStatus(QStringLiteral("Writing support report..."),
@@ -1114,4 +1235,123 @@ void MainWindow::closeEvent(QCloseEvent *event)
     m_settings.setValue(QStringLiteral("window/geometry"), saveGeometry());
     m_settings.sync();
     event->accept();
+}
+
+
+void applyMaidwareTheme(QApplication *app)
+{
+    if (QStyle *fusion = QStyleFactory::create(QStringLiteral("Fusion")))
+        app->setStyle(fusion);
+
+    QPalette pal;
+    const QColor bg(QStringLiteral("#1a1b26"));
+    const QColor surface(QStringLiteral("#2c2d37"));
+    const QColor base(QStringLiteral("#16161d"));
+    const QColor text(QStringLiteral("#d7dae0"));
+    const QColor muted(QStringLiteral("#9295ac"));
+    const QColor accent(QStringLiteral("#5cb9ae"));
+
+    pal.setColor(QPalette::Window, bg);
+    pal.setColor(QPalette::WindowText, text);
+    pal.setColor(QPalette::Base, base);
+    pal.setColor(QPalette::AlternateBase, surface);
+    pal.setColor(QPalette::Text, text);
+    pal.setColor(QPalette::Button, surface);
+    pal.setColor(QPalette::ButtonText, text);
+    pal.setColor(QPalette::BrightText, QColor(QStringLiteral("#ff7a85")));
+    pal.setColor(QPalette::Highlight, accent);
+    pal.setColor(QPalette::HighlightedText, bg);
+    pal.setColor(QPalette::Link, accent);
+    pal.setColor(QPalette::LinkVisited, QColor(QStringLiteral("#a7d8d2")));
+    pal.setColor(QPalette::ToolTipBase, surface);
+    pal.setColor(QPalette::ToolTipText, text);
+    pal.setColor(QPalette::PlaceholderText, muted);
+    pal.setColor(QPalette::Disabled, QPalette::Text, QColor(QStringLiteral("#6f7288")));
+    pal.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(QStringLiteral("#6f7288")));
+    pal.setColor(QPalette::Disabled, QPalette::WindowText, QColor(QStringLiteral("#6f7288")));
+    app->setPalette(pal);
+
+    app->setStyleSheet(QStringLiteral(R"QSS(
+QMainWindow, QDialog { background: #1a1b26; }
+QWidget { color: #d7dae0; font-family: "Noto Sans", "Cantarell", sans-serif; font-size: 10pt; }
+QLabel { background: transparent; }
+QLabel:disabled { color: #6f7288; }
+QFrame#statusCard {
+    background: #2c2d37; border: 1px solid #454654; border-radius: 12px;
+}
+QFrame#sidebar {
+    background: #20212b; border: 1px solid #2c2d37; border-radius: 10px;
+}
+QGroupBox {
+    background: #20212b; border: 1px solid #2c2d37; border-radius: 10px;
+    margin-top: 14px; padding-top: 8px; font-weight: 600;
+}
+QGroupBox::title {
+    subcontrol-origin: margin; subcontrol-position: top left;
+    left: 12px; padding: 0 6px; color: #9295ac;
+}
+QPushButton {
+    background: #2c2d37; color: #d7dae0; border: 1px solid #454654;
+    border-radius: 7px; padding: 7px 15px; min-height: 18px;
+}
+QPushButton:hover { background: #353642; border-color: #5b5d70; }
+QPushButton:pressed { background: #252631; }
+QPushButton:default, QPushButton#checkButton { border-color: #5cb9ae; }
+QPushButton#fixButton {
+    background: #5cb9ae; color: #12131a; border-color: #5cb9ae; font-weight: 700;
+}
+QPushButton#fixButton:hover { background: #73cbc0; border-color: #73cbc0; }
+QPushButton#qualityButton { border-color: #5cb9ae; color: #5cb9ae; font-weight: 600; }
+QPushButton#qualityButton:hover { background: #263b3a; border-color: #73cbc0; color: #73cbc0; }
+QPushButton#fixButton:pressed { background: #4aa49a; }
+QPushButton#fixButton:disabled {
+    background: #242530; color: #6f7288; border-color: #2c2d37;
+}
+QPushButton:disabled {
+    background: #242530; color: #6f7288; border-color: #2c2d37;
+}
+QListWidget {
+    background: transparent; border: none; outline: 0; padding: 3px;
+}
+QListWidget::item {
+    border: 1px solid transparent; border-radius: 7px; padding: 7px 7px; margin: 2px 0;
+}
+QListWidget::item:hover { background: #2a2b36; border-color: #353642; }
+QListWidget::item:selected {
+    background: #263b3a; border-color: #5cb9ae; color: #d7dae0;
+}
+QPlainTextEdit {
+    background: #16161d; color: #d7dae0; border: 1px solid #2c2d37;
+    border-radius: 8px; padding: 8px;
+    selection-background-color: #5cb9ae; selection-color: #1a1b26;
+    font-family: "DejaVu Sans Mono", "Noto Sans Mono", monospace; font-size: 9.5pt;
+}
+QProgressBar {
+    background: #2c2d37; border: none; border-radius: 3px; min-height: 6px; max-height: 6px;
+}
+QProgressBar::chunk { background: #5cb9ae; border-radius: 3px; }
+QMenuBar { background: #16161d; color: #9295ac; border-bottom: 1px solid #2c2d37; }
+QMenuBar::item { padding: 5px 10px; background: transparent; border-radius: 5px; }
+QMenuBar::item:selected { background: #2c2d37; color: #d7dae0; }
+QMenu { background: #20212b; border: 1px solid #454654; padding: 5px; }
+QMenu::item { padding: 6px 26px 6px 12px; border-radius: 5px; }
+QMenu::item:selected { background: #2c2d37; }
+QMenu::separator { height: 1px; background: #2c2d37; margin: 5px 8px; }
+QStatusBar { background: #16161d; color: #9295ac; border-top: 1px solid #2c2d37; }
+QToolTip { background: #2c2d37; color: #d7dae0; border: 1px solid #454654; padding: 5px 8px; }
+QCheckBox { spacing: 7px; color: #9295ac; }
+QCheckBox::indicator {
+    width: 15px; height: 15px; border-radius: 4px;
+    background: #16161d; border: 1px solid #454654;
+}
+QCheckBox::indicator:checked { background: #5cb9ae; border-color: #5cb9ae; }
+QScrollBar:vertical { background: transparent; width: 10px; margin: 2px; }
+QScrollBar::handle:vertical { background: #454654; border-radius: 4px; min-height: 24px; }
+QScrollBar::handle:vertical:hover { background: #5b5d70; }
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+QScrollBar:horizontal { background: transparent; height: 10px; margin: 2px; }
+QScrollBar::handle:horizontal { background: #454654; border-radius: 4px; min-width: 24px; }
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
+QSplitter::handle { background: transparent; width: 8px; }
+)QSS"));
 }

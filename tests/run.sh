@@ -241,6 +241,62 @@ echo "$out" | grep -qE "^==> Maid: " && fail "spaced names shredded!"
 rm -rf /tmp/mh-base
 ok "suite spine check"
 
+echo "== bluetooth quality fix =="
+rm -rf /tmp/maidhelp-bt && mkdir -p /tmp/maidhelp-bt/stubs /tmp/maidhelp-bt/.config \
+  /tmp/maidhelp-bt/.local/bin /tmp/maidhelp-bt/.local/share/maid-bt /tmp/maidhelp-bt/run
+cat > /tmp/maidhelp-bt/stubs/bluetoothctl <<'EOF'
+#!/bin/bash
+case "$*" in
+  *show*) echo "Controller AA:BB:CC:DD:EE:FF"; echo "Powered: yes" ;;
+  *info*) echo "Device 11:22:33:44:55:66"; echo "Connected: yes" ;;
+  *) exit 0 ;;
+esac
+EOF
+cat > /tmp/maidhelp-bt/stubs/pactl <<'EOF'
+#!/bin/bash
+case "$*" in
+  info) echo "Server Name: PulseAudio (on PipeWire 1.0)"; echo "Default Sink: bluez_output.11_22_33_44_55_66.1" ;;
+  "list short cards") echo "99 bluez_card.11_22_33_44_55_66 module-bluez5-device.c" ;;
+  "list short sinks") printf '50\tbluez_output.11_22_33_44_55_66.1\n51\talsa_output.fallback\n' ;;
+  "list short sink-inputs") : ;;
+  "list source-outputs") : ;;
+  "list cards") printf 'Card #99\n\tName: bluez_card.11_22_33_44_55_66\n\tActive Profile: a2dp-sink\n' ;;
+  "list sinks") printf 'Sink #50\n\tName: bluez_output.11_22_33_44_55_66.1\n\tapi.bluez5.codec = "sbc"\n' ;;
+  *) : ;;
+esac
+EOF
+printf '#!/bin/bash\nexit 0\n' > /tmp/maidhelp-bt/stubs/rfkill
+cat > /tmp/maidhelp-bt/stubs/systemctl <<'EOF'
+#!/bin/bash
+case "$*" in
+  *is-active*) exit 0 ;;
+  *list-unit-files*) : ;;
+  *) exit 0 ;;
+esac
+EOF
+cat > /tmp/maidhelp-bt/.local/bin/bluetooth-toggle.sh <<'EOF'
+#!/bin/bash
+echo "toggle $*" >> "$HOME/toggle.calls"
+exit 0
+EOF
+cat > /tmp/maidhelp-bt/.local/bin/buds-fallback.sh <<'EOF'
+#!/bin/bash
+exit 0
+EOF
+printf '# source\n' > /tmp/maidhelp-bt/.local/share/maid-bt/52-bt-max-quality.conf
+printf 'BUDS_MAC="11:22:33:44:55:66"\nFALLBACK_SINK="alsa_output.fallback"\nQUALITY_LOCK=0\n' > /tmp/maidhelp-bt/.config/bluetooth-buds.conf
+chmod +x /tmp/maidhelp-bt/stubs/* /tmp/maidhelp-bt/.local/bin/*.sh
+out=$(HOME=/tmp/maidhelp-bt XDG_RUNTIME_DIR=/tmp/maidhelp-bt/run \
+  PATH="/tmp/maidhelp-bt/stubs:$STUBS:/usr/bin:/bin" \
+  bash "$PKGDIR/bin/maid-helper" --quality 2>&1); rc=$?
+[ "$rc" = "0" ] || fail "quality fix failed (rc=$rc): $out"
+grep -q 'QUALITY_LOCK=1' /tmp/maidhelp-bt/.config/bluetooth-buds.conf || fail "quality lock not enabled"
+[ -f /tmp/maidhelp-bt/.config/wireplumber/wireplumber.conf.d/52-bt-max-quality.conf ] || fail "max-quality config not written"
+[ -s /tmp/maidhelp-bt/toggle.calls ] || fail "quality fix did not switch back to A2DP"
+grep -q 'Improving Bluetooth sound quality' <<<"$out" || fail "quality output missing"
+rm -rf /tmp/maidhelp-bt
+ok "bluetooth quality fix"
+
 echo "== cleanup =="
 rm -rf /tmp/maidhelp-t
 unset FF_DECODERS BT_CODECS NVIDIA_VGA AMD_VGA AMD_RV GAMEPAD FLAT_STATE FW_STATE

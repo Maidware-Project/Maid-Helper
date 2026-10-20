@@ -88,13 +88,22 @@ int main(int argc, char **argv)
         QStringLiteral("screenshot"),
         QStringLiteral("Save a window screenshot and exit (testing)."),
         QStringLiteral("file"));
+    const QCommandLineOption maidwareOption(
+        QStringLiteral("maidware"),
+        QStringLiteral("Use the Maidware dark theme for this run."));
     parser.addOption(checkOption);
     parser.addOption(noCheckOption);
     parser.addOption(onlyOption);
     parser.addOption(screenshotOption);
+    parser.addOption(maidwareOption);
     parser.process(app);
 
+    if (parser.isSet(maidwareOption) || parser.isSet(screenshotOption)
+        || qEnvironmentVariableIsSet("MAIDWARE_THEME"))
+        applyMaidwareTheme(&app);
+
     MainWindow window;
+    window.setScreenshotMode(parser.isSet(screenshotOption));
     if (parser.isSet(onlyOption))
         window.setOnlyModule(parser.value(onlyOption));
 
