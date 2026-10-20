@@ -32,7 +32,9 @@ The wrapper probes `XDG_RUNTIME_DIR` for a `wayland-*` socket when
 `WAYLAND_DISPLAY` is missing, then runs `kdeconnectd` with an ordered
 `QT_QPA_PLATFORM` fallback (`wayland;xcb;offscreen` or
 `xcb;wayland;offscreen`). It lives in `~/.local`, so KDE Connect package
-updates never remove it. It takes effect at the next login.
+updates never remove it. It takes effect at the next login. The doctor
+prints the detected Plasma, Frameworks, Qt and KDE Connect versions
+before its verdict, so logs identify the stack in use.
 
 ## source patch
 
