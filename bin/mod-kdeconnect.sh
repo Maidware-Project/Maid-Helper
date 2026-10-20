@@ -12,6 +12,8 @@ set -u
 here="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1090,SC1091
 . "$here/lib.sh"
+# shellcheck disable=SC1090,SC1091
+. "$here/kde-env.sh"
 
 MODE="${1:-check}"
 WRAPPER="$HOME/.local/bin/kdeconnectd-wrapper"

@@ -33,7 +33,7 @@ done
 
 say() { echo "==> $*"; }
 # shellcheck disable=SC1091
-. "$PKGDIR/bin/lib.sh"
+. "$PKGDIR/bin/kde-env.sh"
 kde_env
 say "$(kde_env_line)"
 BASE=""

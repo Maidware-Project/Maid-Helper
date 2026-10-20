@@ -39,7 +39,7 @@ if [ "$UNINST" = "1" ]; then
     "$BINDIR"/mod-codecs.sh "$BINDIR"/mod-gpu.sh \
     "$BINDIR"/mod-print.sh "$BINDIR"/mod-fonts.sh "$BINDIR"/mod-suite.sh \
     "$BINDIR"/mod-gamepad.sh "$BINDIR"/mod-flatpak.sh "$BINDIR"/mod-firmware.sh \
-    "$BINDIR"/mod-kdeconnect.sh
+    "$BINDIR"/mod-kdeconnect.sh "$BINDIR"/kde-env.sh
   rm -rf "$SHAREDIR"/maid-helper/patches
   rm -f "$SHAREDIR"/applications/maid-helper.desktop
   rm -f "$SHAREDIR"/icons/hicolor/scalable/apps/maid-helper.svg
@@ -132,12 +132,12 @@ copy_one() {
 }
 
 # shellcheck disable=SC1091
-. "$PKGDIR/bin/lib.sh"
+. "$PKGDIR/bin/kde-env.sh"
 kde_env
 say "$(kde_env_line)"
 
 COPY_FAILED=0
-for f in maid-helper maid-helper-run lib.sh mod-codecs.sh mod-gpu.sh mod-print.sh mod-fonts.sh mod-suite.sh mod-gamepad.sh mod-flatpak.sh mod-firmware.sh mod-kdeconnect.sh; do
+for f in maid-helper maid-helper-run lib.sh mod-codecs.sh mod-gpu.sh mod-print.sh mod-fonts.sh mod-suite.sh mod-gamepad.sh mod-flatpak.sh mod-firmware.sh mod-kdeconnect.sh kde-env.sh; do
   copy_one "$PKGDIR/bin/$f" "$BINDIR/$f" || COPY_FAILED=1
 done
 [ "$CHECK" = "0" ] && chmod +x "$BINDIR"/maid-helper "$BINDIR"/maid-helper-run 2>/dev/null || true

@@ -32,6 +32,7 @@ bin/mod-gamepad.sh       gamepads (delegates to Maid AU on openSUSE)
 bin/mod-flatpak.sh       flathub remote present
 bin/mod-firmware.sh      fwupd present for firmware updates
 bin/mod-kdeconnect.sh    KDE Connect early-login crash (user wrapper)
+bin/kde-env.sh           shared KDE/Plasma/Qt version detection
 bin/mod-suite.sh         is the rest of the Maid suite whole?
 bin/lib.sh               shared bits (never run directly)
 install.sh               multi-distro installer

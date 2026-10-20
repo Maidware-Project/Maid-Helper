@@ -37,6 +37,7 @@ for f in "$PKGDIR"/bin/mod-*.sh; do
   b=$(basename "$f")
   cmp -s "$f" "/tmp/maidhelp-i/.local/bin/$b" || fail "not installed: $b"
 done
+cmp -s "$PKGDIR/bin/kde-env.sh" "/tmp/maidhelp-i/.local/bin/kde-env.sh" || fail "not installed: kde-env.sh"
 [ -x /tmp/maidhelp-i/.local/bin/maid-helper ] || fail "dispatcher not executable"
 [ -x /tmp/maidhelp-i/.local/bin/maid-helper-run ] || fail "launcher not executable"
 [ -f /tmp/maidhelp-i/.local/share/applications/maid-helper.desktop ] || fail "desktop entry missing"
@@ -44,6 +45,7 @@ done
 grep -q "Terminal=false" /tmp/maidhelp-i/.local/share/applications/maid-helper.desktop || fail "desktop forces terminal"
 HOME=/tmp/maidhelp-i bash "$PKGDIR/install.sh" --uninstall --purge </dev/null >/dev/null 2>&1 || fail "fake uninstall crashed"
 [ -e /tmp/maidhelp-i/.local/bin/maid-helper ] && fail "uninstall left files"
+[ -e /tmp/maidhelp-i/.local/bin/kde-env.sh ] && fail "uninstall left kde-env.sh"
 [ -e /tmp/maidhelp-i/.local/share/icons/hicolor/scalable/apps/maid-helper.svg ] && fail "uninstall left icon"
 [ -e /tmp/maidhelp-i/.local/bin/maid-helper-run ] && fail "uninstall left launcher"
 rm -rf /tmp/maidhelp-i
