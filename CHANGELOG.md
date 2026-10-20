@@ -1,5 +1,19 @@
 # changelog
 
+## kdeconnect: one version-independent early-login fix
+
+- new `kdeconnect` doctor: detects the KDE Connect D-Bus early-login
+  crash and installs a user wrapper plus D-Bus/autostart overrides. no
+  root, no package rebuild, survives KDE Connect updates; takes effect
+  at the next login.
+- the upstream-style source patch is shipped under
+  `patches/kdeconnect-26.08.2/` and attached to GitHub releases for
+  distro/upstream use. the old RPM-style duplicate is gone.
+- the sibling installers no longer carry their own copies of the patch:
+  one suite fix, one place. `maid-helper --only kdeconnect --fix` is the
+  documented path (Maid BT, Maidshare, Maid AU, Maid Runner, Watcher
+  changelogs point here).
+
 ## fixes: an honest codecs check, a window you can read
 
 - codecs: the check asked ffmpeg's *decoder* list for libmp3lame - an

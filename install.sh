@@ -38,7 +38,9 @@ if [ "$UNINST" = "1" ]; then
     "$BINDIR"/maid-helper-run \
     "$BINDIR"/mod-codecs.sh "$BINDIR"/mod-gpu.sh \
     "$BINDIR"/mod-print.sh "$BINDIR"/mod-fonts.sh "$BINDIR"/mod-suite.sh \
-    "$BINDIR"/mod-gamepad.sh "$BINDIR"/mod-flatpak.sh "$BINDIR"/mod-firmware.sh
+    "$BINDIR"/mod-gamepad.sh "$BINDIR"/mod-flatpak.sh "$BINDIR"/mod-firmware.sh \
+    "$BINDIR"/mod-kdeconnect.sh
+  rm -rf "$SHAREDIR"/maid-helper/patches
   rm -f "$SHAREDIR"/applications/maid-helper.desktop
   rm -f "$SHAREDIR"/icons/hicolor/scalable/apps/maid-helper.svg
   if [ "$PURGE" = "1" ]; then
@@ -130,7 +132,7 @@ copy_one() {
 }
 
 COPY_FAILED=0
-for f in maid-helper maid-helper-run lib.sh mod-codecs.sh mod-gpu.sh mod-print.sh mod-fonts.sh mod-suite.sh mod-gamepad.sh mod-flatpak.sh mod-firmware.sh; do
+for f in maid-helper maid-helper-run lib.sh mod-codecs.sh mod-gpu.sh mod-print.sh mod-fonts.sh mod-suite.sh mod-gamepad.sh mod-flatpak.sh mod-firmware.sh mod-kdeconnect.sh; do
   copy_one "$PKGDIR/bin/$f" "$BINDIR/$f" || COPY_FAILED=1
 done
 [ "$CHECK" = "0" ] && chmod +x "$BINDIR"/maid-helper "$BINDIR"/maid-helper-run 2>/dev/null || true
@@ -142,6 +144,16 @@ done
 for f in "$PKGDIR"/desktop/*.svg; do
   [ -f "$f" ] || continue
   copy_one "$f" "$SHAREDIR/icons/hicolor/scalable/apps/$(basename "$f")" 0
+done
+
+# The upstream-style kdeconnect patch travels with the package as a
+# reference/release artifact. The automatic fix is mod-kdeconnect.sh
+# (maid-helper --only kdeconnect --fix), not a rebuild.
+for f in "$PKGDIR"/patches/kdeconnect-26.08.2/*; do
+  [ -f "$f" ] || continue
+  copy_one "$f" \
+    "$SHAREDIR/maid-helper/patches/kdeconnect-26.08.2/$(basename "$f")" \
+    || COPY_FAILED=1
 done
 
 if [ "$CHECK" = "1" ]; then say "(check only, nothing changed)"; exit 0; fi

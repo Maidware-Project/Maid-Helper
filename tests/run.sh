@@ -67,6 +67,7 @@ ok "launcher picks terminal"
 echo "== dispatcher: check reports, unknown rejected, run logged =="
 export PATH="$STUBS:/usr/bin:/bin"
 export HOME=/tmp/maidhelp-t
+export MAID_KDECONNECTD=/nonexistent
 out=$(bash "$PKGDIR/bin/maid-helper" --check 2>&1)
 echo "$out" | grep -q "result:" || fail "no result line"
 [ -s /tmp/maidhelp-t/.local/share/maid-helper.log ] || fail "run log not written"
@@ -74,6 +75,26 @@ grep -q "^===== maid-helper check " /tmp/maidhelp-t/.local/share/maid-helper.log
 grep -q -- "--- codecs ---" /tmp/maidhelp-t/.local/share/maid-helper.log || fail "log missing module output"
 bash "$PKGDIR/bin/maid-helper" --only bogus --check >/dev/null 2>&1 && fail "bogus module accepted"
 ok "dispatcher contract"
+
+echo "== kdeconnect: wrapper installs into a fake home =="
+rm -rf /tmp/maidhelp-kc /tmp/maidhelp-kc-bin
+mkdir -p /tmp/maidhelp-kc /tmp/maidhelp-kc-bin
+printf '#!/bin/sh\nexit 0\n' > /tmp/maidhelp-kc-bin/kdeconnectd
+chmod +x /tmp/maidhelp-kc-bin/kdeconnectd
+export HOME=/tmp/maidhelp-kc
+export MAID_KDECONNECTD=/tmp/maidhelp-kc-bin/kdeconnectd
+out=$(PATH="$STUBS:/usr/bin:/bin" bash "$PKGDIR/bin/mod-kdeconnect.sh" check 2>&1); rc=$?
+[ "$rc" = "2" ] || fail "kdeconnect check should need fix (rc=$rc): $out"
+out=$(PATH="$STUBS:/usr/bin:/bin" bash "$PKGDIR/bin/mod-kdeconnect.sh" fix 2>&1); rc=$?
+[ "$rc" = "0" ] || fail "kdeconnect fix failed (rc=$rc): $out"
+[ -x "$HOME/.local/bin/kdeconnectd-wrapper" ] || fail "wrapper not installed"
+grep -q 'QT_QPA_PLATFORM' "$HOME/.local/bin/kdeconnectd-wrapper" || fail "wrapper missing platform fallback"
+grep -Fqx "Exec=$HOME/.local/bin/kdeconnectd-wrapper" "$HOME/.local/share/dbus-1/services/org.kde.kdeconnect.service" || fail "dbus override missing"
+grep -Fqx "Exec=$HOME/.local/bin/kdeconnectd-wrapper" "$HOME/.config/autostart/org.kde.kdeconnect.daemon.desktop" || fail "autostart override missing"
+out=$(PATH="$STUBS:/usr/bin:/bin" bash "$PKGDIR/bin/mod-kdeconnect.sh" check 2>&1); rc=$?
+[ "$rc" = "0" ] || fail "kdeconnect check still failing after fix (rc=$rc): $out"
+rm -rf /tmp/maidhelp-kc /tmp/maidhelp-kc-bin
+ok "kdeconnect wrapper"
 
 echo "== codecs: missing decoders need fix, bt card assessed =="
 export FF_DECODERS=none BT_CODECS=full

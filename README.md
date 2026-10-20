@@ -31,6 +31,7 @@ bin/mod-fonts.sh         emoji + CJK + MS fonts (MS only with consent)
 bin/mod-gamepad.sh       gamepads (delegates to Maid AU on openSUSE)
 bin/mod-flatpak.sh       flathub remote present
 bin/mod-firmware.sh      fwupd present for firmware updates
+bin/mod-kdeconnect.sh    KDE Connect early-login crash (user wrapper)
 bin/mod-suite.sh         is the rest of the Maid suite whole?
 bin/lib.sh               shared bits (never run directly)
 install.sh               multi-distro installer
@@ -52,7 +53,7 @@ actually changed). no network downloads anywhere in this package.
 ```sh
 maid-helper --check           # report only, changes nothing (default)
 maid-helper --fix             # detect + apply fixes (sudo inside)
-maid-helper --only codecs     # one module: codecs|gpu|print|fonts|suite|gamepad|flatpak|firmware
+maid-helper --only codecs     # one module: codecs|gpu|print|fonts|suite|gamepad|flatpak|firmware|kdeconnect
 ```
 
 exit codes: `0` healthy/fixed, `2` needs attention, anything else failed.
@@ -60,6 +61,24 @@ exit codes: `0` healthy/fixed, `2` needs attention, anything else failed.
 the app menu entry ("Maid Helper") runs the check in a terminal and keeps
 the window open for reading; when it found trouble it offers the safe
 fixes right there. every run appends to `~/.local/share/maid-helper.log`.
+
+## kdeconnect early-login crash
+
+on kernel 7.2.11 / Plasma 6.8, `kdeconnectd` can be D-Bus activated
+before the Wayland session environment reaches the systemd user manager.
+Qt picks `xcb` while Xwayland is still starting and the daemon aborts
+with a core dump. the `kdeconnect` module detects this and installs a
+small user-level wrapper that probes for the compositor socket and gives
+Qt an ordered `wayland;xcb;offscreen` fallback:
+
+```sh
+maid-helper --only kdeconnect --fix
+```
+
+it lives in `~/.local`, needs no root or package rebuild, and survives
+KDE Connect updates. takes effect at the next login. the upstream-style
+source patch is shipped under `patches/kdeconnect-26.08.2/` for distro
+use and attached to releases.
 
 ## fully open source, floss compliant
 

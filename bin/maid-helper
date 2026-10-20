@@ -2,7 +2,8 @@
 # Maid Helper: first-aid kit for new (and older) Linux users.
 #   maid-helper --check [--only a,b]   report only, change nothing (default)
 #   maid-helper --fix [--only a,b]      detect + apply fixes (sudo inside)
-# Modules: codecs, gpu, print, fonts. Fully open source (MIT); non-free
+# Modules: codecs, gpu, print, fonts, suite, gamepad, flatpak, firmware,
+# kdeconnect. Fully open source (MIT); non-free
 # software (NVIDIA drivers, Microsoft fonts) installs only with explicit
 # consent - tty prompt, or NVIDIA_PROPRIETARY=1 / MSFONTS=1. No services.
 set -u
@@ -27,7 +28,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-ALL_MODULES="codecs gpu print fonts suite gamepad flatpak firmware"
+ALL_MODULES="codecs gpu print fonts suite gamepad flatpak firmware kdeconnect"
 MODULES="$ALL_MODULES"
 if [ -n "$ONLY" ]; then
   MODULES=$(echo "$ONLY" | tr ',' ' ')
