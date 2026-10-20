@@ -1,6 +1,8 @@
 # Maid Helper
 
-command-line helper. first-aid kit for small linux breakage. checks common issues and fixes what it safely can. on-demand, no daemon. only changes what it can safely fix, never installs proprietary drivers, and prints bootloader edits to run by hand.
+command-line helper. first-aid kit for small linux breakage. checks common issues and fixes what it safely can. on-demand, no daemon. only changes what it can safely fix, never installs proprietary drivers, and prints bootloader edits to run by hand. it has a window now: launch Maid Helper from the menu and get the whole kit - module list, checks, fixes and a shareable report - in one Maidware-themed GUI.
+
+![](screenshots/maid-helper.png)
 
 ## quick start
 
@@ -54,14 +56,28 @@ actually changed). no network downloads anywhere in this package.
 ```sh
 maid-helper --check           # report only, changes nothing (default)
 maid-helper --fix             # detect + apply fixes (sudo inside)
-maid-helper --only codecs     # one module: codecs|gpu|print|fonts|suite|gamepad|flatpak|firmware|kdeconnect
+maid-helper --only codecs     # one module: codecs|gpu|print|fonts|suite|gamepad|flatpak|firmware|kdeconnect|bluetooth
 ```
 
 exit codes: `0` healthy/fixed, `2` needs attention, anything else failed.
 
-the app menu entry ("Maid Helper") runs the check in a terminal and keeps
-the window open for reading; when it found trouble it offers the safe
-fixes right there. every run appends to `~/.local/share/maid-helper.log`.
+the app menu entry ("Maid Helper") runs the GUI check and keeps the
+window open for reading; the terminal flow is unchanged. every run
+appends to `~/.local/share/maid-helper.log`.
+
+## bluetooth module
+
+new module for earbuds breakage (Maidware GUI or
+`maid-helper --only bluetooth`):
+
+- routing - buds connected but the default sink is not bluetooth: the
+  fix re-routes sound back to the buds.
+- quality - card snapped down to SBC after a switch: the optional
+  max-quality fix pins LDAC first (reversible `QUALITY_LOCK`, writes a
+  `wireplumber` config with a built-in fallback) and rechecks. skipped
+  while a mic is live or the buds are away - a live call mic is never
+  touched.
+- report - printed for bug reports: no device names, no MAC addresses.
 
 ## kdeconnect early-login crash
 

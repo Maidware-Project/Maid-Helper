@@ -1,5 +1,16 @@
 # changelog
 
+## native gui + bluetooth module
+
+- new window (Maidware theme): the whole kit - module list, check,
+  safe fixes and a shareable report - without a terminal. ships as the
+  "Maid Helper" launcher; the CLI flow is unchanged.
+- new `bluetooth` module: routing check (buds connected but sound not
+  going to them), the suspend warm-link config, and an optional
+  max-quality fixer that pins LDAC with one click (opt-in, reversible,
+  never touches a live call mic). mirrors `--only bluetooth`.
+- report text stays private: no device names, no MAC addresses.
+
 ## kdeconnect: one version-independent early-login fix
 
 - new `kdeconnect` doctor: detects the KDE Connect D-Bus early-login
