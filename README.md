@@ -1,9 +1,6 @@
 # Maid Helper
 
 command-line helper. first-aid kit for small linux breakage. checks common issues and fixes what it safely can. on-demand, no daemon. only changes what it can safely fix, never installs proprietary drivers, and prints bootloader edits to run by hand. it has a window now: launch Maid Helper from the menu and get the whole kit - module list, checks, fixes and a shareable report - in one Maidware-themed GUI.
-
-![](screenshots/maid-helper.png)
-
 ## quick start
 
 ```sh
