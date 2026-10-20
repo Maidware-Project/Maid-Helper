@@ -6,9 +6,9 @@
   crash and installs a user wrapper plus D-Bus/autostart overrides. no
   root, no package rebuild, survives KDE Connect updates; takes effect
   at the next login.
-- the upstream-style source patch is shipped under
-  `patches/kdeconnect-26.08.2/` and attached to GitHub releases for
-  distro/upstream use. the old RPM-style duplicate is gone.
+- no KDE Connect source patch is shipped at all: the wrapper is the
+  only fix, so a future KDE Connect update cannot conflict with a stale
+  patch. the old RPM-style duplicate and the per-repo copies are gone.
 - the sibling installers no longer carry their own copies of the patch:
   one suite fix, one place. `maid-helper --only kdeconnect --fix` is the
   documented path (Maid BT, Maidshare, Maid AU, Maid Runner, Watcher

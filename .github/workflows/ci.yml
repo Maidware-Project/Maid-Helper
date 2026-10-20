@@ -33,10 +33,6 @@ jobs:
           sudo install -m 0755 nfpm /usr/local/bin/nfpm
       - name: build packages
         run: VERSION="${GITHUB_REF_NAME#v}" packaging/packages.sh dist
-      - name: stage patch
-        run: |
-          cp patches/kdeconnect-26.08.2/*.patch dist/
-          ( cd dist && rm -f SHA256SUMS && sha256sum *.deb *.rpm *.pkg.tar.zst *.patch > SHA256SUMS )
       - name: publish
         env:
           GH_TOKEN: ${{ github.token }}

@@ -151,17 +151,13 @@ for f in "$PKGDIR"/desktop/*.svg; do
   copy_one "$f" "$SHAREDIR/icons/hicolor/scalable/apps/$(basename "$f")" 0
 done
 
-# The upstream-style kdeconnect patch travels with the package as a
-# reference/release artifact. The automatic fix is mod-kdeconnect.sh
-# (maid-helper --only kdeconnect --fix), not a rebuild.
-for f in "$PKGDIR"/patches/kdeconnect-26.08.2/*; do
-  [ -f "$f" ] || continue
-  copy_one "$f" \
-    "$SHAREDIR/maid-helper/patches/kdeconnect-26.08.2/$(basename "$f")" \
-    || COPY_FAILED=1
-done
+# The version-specific source patch is gone; the automatic fix is
+# mod-kdeconnect.sh (maid-helper --only kdeconnect --fix), not a rebuild.
+# Older installs may still have the old patch artifact on disk.
 
 if [ "$CHECK" = "1" ]; then say "(check only, nothing changed)"; exit 0; fi
+# clean the old patch artifact left by earlier versions
+rm -rf "$SHAREDIR"/maid-helper/patches
 if [ "$COPY_FAILED" != "0" ]; then
   warn "some files failed to copy - install incomplete (see above)"
   exit 1

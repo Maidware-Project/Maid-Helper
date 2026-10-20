@@ -32,13 +32,15 @@ echo "$out" | grep -q '^==> KDE:' || fail "installer does not report the KDE sta
 ok "installer dry run clean"
 
 echo "== installer covers every module =="
-rm -rf /tmp/maidhelp-i; mkdir -p /tmp/maidhelp-i
+rm -rf /tmp/maidhelp-i; mkdir -p /tmp/maidhelp-i/.local/share/maid-helper/patches
+touch /tmp/maidhelp-i/.local/share/maid-helper/patches/old.patch
 HOME=/tmp/maidhelp-i bash "$PKGDIR/install.sh" --no-packages </dev/null >/dev/null 2>&1 || fail "fake install crashed"
 for f in "$PKGDIR"/bin/mod-*.sh; do
   b=$(basename "$f")
   cmp -s "$f" "/tmp/maidhelp-i/.local/bin/$b" || fail "not installed: $b"
 done
 cmp -s "$PKGDIR/bin/kde-env.sh" "/tmp/maidhelp-i/.local/bin/kde-env.sh" || fail "not installed: kde-env.sh"
+[ -e /tmp/maidhelp-i/.local/share/maid-helper/patches ] && fail "legacy patch dir not cleaned"
 [ -x /tmp/maidhelp-i/.local/bin/maid-helper ] || fail "dispatcher not executable"
 [ -x /tmp/maidhelp-i/.local/bin/maid-helper-run ] || fail "launcher not executable"
 [ -f /tmp/maidhelp-i/.local/share/applications/maid-helper.desktop ] || fail "desktop entry missing"
