@@ -23,6 +23,8 @@
   KDE Connect versions; Maid BT skips its plasmoid on Plasma older than
   6. the doctor prints the same line, so a bug report starts with the
   stack that produced it.
+- `install-suite.sh` now includes Maid Runner, so the meta-installer
+  covers all five tools; Runner accepts `--no-packages` for quiet runs.
 
 ## fixes: an honest codecs check, a window you can read
 

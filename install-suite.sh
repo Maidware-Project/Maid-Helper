@@ -20,6 +20,7 @@ fi
 PAIRS="Maid BT|Maid-BT
 Maid AU|Maid-AU
 Maidshare|Maidshare
+Maid Runner|Maid-Runner
 MHE/Maid-Helper|Maid-Helper"
 CHECK=0; NO_PKGS=""; PULLONLY=0
 for a in "$@"; do
