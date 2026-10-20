@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 # Universal installer: Arch (pacman), Debian/Ubuntu (apt), Fedora (dnf),
 # openSUSE (zypper). Copies files (no symlinks - survives folder moves).
-# Usage: ./install.sh [--check] [--no-packages] [--uninstall [--purge]]
-#          [--prefix=DIR] [--no-config]
+# Usage: ./install.sh [--check] [--no-packages] [--no-gui]
+#          [--uninstall [--purge]] [--prefix=DIR] [--no-config]
 # --prefix installs program files elsewhere (packaging: DESTDIR supported);
 # user setup is skipped for non-default prefixes and with --no-config.
 set -u
 PKGDIR="$(cd "$(dirname "$0")" && pwd)"
 BACKUP_TS="$(date +%Y%m%d-%H%M%S)"
-CHECK=0; NO_PKGS=0; UNINST=0; PURGE=0; NOCONFIG=0; PREFIX=""
+CHECK=0; NO_PKGS=0; UNINST=0; PURGE=0; NOCONFIG=0; PREFIX=""; NO_GUI=0
 for a in "$@"; do
   case "$a" in
     --check) CHECK=1 ;;
     --no-packages) NO_PKGS=1 ;;
+    --no-gui) NO_GUI=1 ;;
     --uninstall) UNINST=1 ;;
     --purge) PURGE=1 ;;
     --no-config) NOCONFIG=1 ;;
@@ -35,11 +36,11 @@ if [ "$UNINST" = "1" ]; then
   # program files come out of the same dirs the install used, so
   # --prefix/DESTDIR installs uninstall cleanly too.
   rm -f "$BINDIR"/maid-helper "$BINDIR"/lib.sh \
-    "$BINDIR"/maid-helper-run \
+    "$BINDIR"/maid-helper-run "$BINDIR"/maid-helper-launch "$BINDIR"/maid-helper-gui \
     "$BINDIR"/mod-codecs.sh "$BINDIR"/mod-gpu.sh \
     "$BINDIR"/mod-print.sh "$BINDIR"/mod-fonts.sh "$BINDIR"/mod-suite.sh \
     "$BINDIR"/mod-gamepad.sh "$BINDIR"/mod-flatpak.sh "$BINDIR"/mod-firmware.sh \
-    "$BINDIR"/mod-kdeconnect.sh "$BINDIR"/kde-env.sh
+    "$BINDIR"/mod-kdeconnect.sh "$BINDIR"/kde-env.sh "$BINDIR"/mod-bluetooth.sh
   rm -rf "$SHAREDIR"/maid-helper/patches
   rm -f "$SHAREDIR"/applications/maid-helper.desktop
   rm -f "$SHAREDIR"/icons/hicolor/scalable/apps/maid-helper.svg
@@ -119,6 +120,9 @@ copy_one() {
   if [ "$rewrite" = "1" ]; then
     # escape & (sed replacement metachar) in $HOME
     sed -e "s|@HOME@|${HOME//&/\\&}|g" "$src" > "$tmp"
+  elif [ "$rewrite" = "2" ]; then
+    # packaged /usr-style prefix: point the launcher at the real prefix
+    sed -e "s|@HOME@/.local|${PREFIX}|g" "$src" > "$tmp"
   else
     cp -a "$src" "$tmp"
   fi
@@ -131,19 +135,66 @@ copy_one() {
   echo "installed $dest"
 }
 
+# Native Qt GUI: built when the toolchain is present, skipped cleanly when
+# it is not. The menu entry launches this, never a terminal.
+GUI_INSTALLED=0
+build_gui() {
+  local src="$PKGDIR/gui" builddir jobs
+  [ -d "$src" ] || { warn "gui/ missing - GUI skipped"; return 0; }
+  if [ "$NO_GUI" = "1" ]; then
+    say "GUI skipped (--no-gui)"
+    return 0
+  fi
+  if [ "$CHECK" = "1" ]; then
+    GUI_INSTALLED=1
+    echo "BUILD $BINDIR/maid-helper-gui (if cmake + Qt6 Widgets dev files are present)"
+    return 0
+  fi
+  if ! command -v cmake >/dev/null 2>&1; then
+    warn "GUI not built: cmake not found (terminal helper still installed)"
+    return 0
+  fi
+  builddir=$(mktemp -d) || return 0
+  jobs=$(nproc 2>/dev/null || echo 2)
+  say "building the Qt6 GUI..."
+  if cmake -S "$src" -B "$builddir" -DCMAKE_BUILD_TYPE=Release >/dev/null 2>&1 \
+     && cmake --build "$builddir" -j"$jobs" >/dev/null 2>&1 \
+     && [ -x "$builddir/maid-helper-gui" ]; then
+    if install -m 0755 "$builddir/maid-helper-gui" "$BINDIR/maid-helper-gui"; then
+      say "installed $BINDIR/maid-helper-gui"
+      GUI_INSTALLED=1
+    else
+      warn "could not install maid-helper-gui"
+    fi
+  else
+    warn "GUI not built: install cmake and Qt6 Widgets development files"
+    warn "  openSUSE: qt6-base-devel | Arch: qt6-base | Fedora: qt6-qtbase-devel | Debian: qt6-base-dev"
+  fi
+  rm -rf "$builddir"
+}
+
 # shellcheck disable=SC1091
 . "$PKGDIR/bin/kde-env.sh"
 kde_env
 say "$(kde_env_line)"
 
 COPY_FAILED=0
-for f in maid-helper maid-helper-run lib.sh mod-codecs.sh mod-gpu.sh mod-print.sh mod-fonts.sh mod-suite.sh mod-gamepad.sh mod-flatpak.sh mod-firmware.sh mod-kdeconnect.sh kde-env.sh; do
+for f in maid-helper maid-helper-run maid-helper-launch lib.sh mod-codecs.sh mod-gpu.sh mod-print.sh mod-fonts.sh mod-suite.sh mod-gamepad.sh mod-flatpak.sh mod-firmware.sh mod-kdeconnect.sh mod-bluetooth.sh kde-env.sh; do
   copy_one "$PKGDIR/bin/$f" "$BINDIR/$f" || COPY_FAILED=1
 done
-[ "$CHECK" = "0" ] && chmod +x "$BINDIR"/maid-helper "$BINDIR"/maid-helper-run 2>/dev/null || true
+[ "$CHECK" = "0" ] && chmod +x "$BINDIR"/maid-helper "$BINDIR"/maid-helper-run "$BINDIR"/maid-helper-launch 2>/dev/null || true
+
+build_gui
 
 for f in "$PKGDIR"/desktop/*.desktop; do
   [ -f "$f" ] || continue
+  # the menu entry needs the GUI; a terminal-only build skips it rather
+  # than opening a terminal behind the user's back.
+  if [ "$(basename "$f")" = "maid-helper.desktop" ] \
+     && [ "$GUI_INSTALLED" != "1" ] && [ ! -x "$BINDIR/maid-helper-gui" ]; then
+    [ "$CHECK" = "1" ] && echo "SKIP $SHAREDIR/applications/maid-helper.desktop (GUI not built)"
+    continue
+  fi
   copy_one "$f" "$SHAREDIR/applications/$(basename "$f")" $REWRITE
 done
 for f in "$PKGDIR"/desktop/*.svg; do

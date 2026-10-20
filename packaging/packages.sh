@@ -35,7 +35,7 @@ cfg="$(mktemp)"
 trap 'rm -rf "$stage" "$cfg"' EXIT
 
 # one install into a staging dir - the same files the installer would place
-DESTDIR="$stage" bash "$root/install.sh" --prefix=/usr --no-packages --no-config >/dev/null
+DESTDIR="$stage" bash "$root/install.sh" --prefix=/usr --no-packages --no-config --no-gui >/dev/null
 
 emit() { # emit <indent> <key> <space-separated values>
   local indent="$1" key="$2" values="${3:-}"

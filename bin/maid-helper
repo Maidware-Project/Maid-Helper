@@ -2,8 +2,9 @@
 # Maid Helper: first-aid kit for new (and older) Linux users.
 #   maid-helper --check [--only a,b]   report only, change nothing (default)
 #   maid-helper --fix [--only a,b]      detect + apply fixes (sudo inside)
+#   maid-helper --report                write a shareable Bluetooth report
 # Modules: codecs, gpu, print, fonts, suite, gamepad, flatpak, firmware,
-# kdeconnect. Fully open source (MIT); non-free
+# kdeconnect, bluetooth. Fully open source (MIT); non-free
 # software (NVIDIA drivers, Microsoft fonts) installs only with explicit
 # consent - tty prompt, or NVIDIA_PROPRIETARY=1 / MSFONTS=1. No services.
 set -u
@@ -17,21 +18,30 @@ if ! mkdir -p "$(dirname "$LOG")" 2>/dev/null || [ ! -w "$(dirname "$LOG")" ]; t
   LOG=/dev/null
 fi
 
-MODE=check; ONLY=""
+MODE=check; ONLY=""; REPORT=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --check) MODE=check; shift ;;
     --fix) MODE=fix; shift ;;
+    --report) REPORT=1; shift ;;
     --only=*) ONLY="${1#--only=}"; shift ;;
     --only) ONLY="${2:-}"; shift 2 2>/dev/null || shift ;;
     *) echo "unknown option: $1 (see header)" >&2; exit 2 ;;
   esac
 done
 
-ALL_MODULES="codecs gpu print fonts suite gamepad flatpak firmware kdeconnect"
+ALL_MODULES="codecs gpu print fonts suite gamepad flatpak firmware kdeconnect bluetooth"
 MODULES="$ALL_MODULES"
 if [ -n "$ONLY" ]; then
   MODULES=$(echo "$ONLY" | tr ',' ' ')
+fi
+
+if [ "$REPORT" = "1" ]; then
+  if [ -n "$ONLY" ] && [ "$ONLY" != "bluetooth" ]; then
+    echo "--report currently covers the bluetooth module only" >&2
+    exit 2
+  fi
+  exec bash "$BINDIR/mod-bluetooth.sh" report
 fi
 
 PM=$(detect_pm)
