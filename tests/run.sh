@@ -26,7 +26,8 @@ ok "no personal data"
 
 echo "== installer dry run =="
 rm -rf /tmp/maidhelp-t; mkdir -p /tmp/maidhelp-t
-HOME=/tmp/maidhelp-t bash "$PKGDIR/install.sh" --check >/dev/null 2>&1 || fail "install --check"
+out=$(HOME=/tmp/maidhelp-t bash "$PKGDIR/install.sh" --check 2>&1) || fail "install --check"
+echo "$out" | grep -q '^==> KDE:' || fail "installer does not report the KDE stack"
 [ -e /tmp/maidhelp-t/.local/bin/maid-helper ] && fail "dry run wrote files"
 ok "installer dry run clean"
 
@@ -87,6 +88,7 @@ export HOME=/tmp/maidhelp-kc
 export MAID_KDECONNECTD=/tmp/maidhelp-kc-bin/kdeconnectd
 out=$(PATH="$STUBS:/usr/bin:/bin" bash "$PKGDIR/bin/mod-kdeconnect.sh" check 2>&1); rc=$?
 [ "$rc" = "2" ] || fail "kdeconnect check should need fix (rc=$rc): $out"
+echo "$out" | grep -q '^KDE:' || fail "kdeconnect doctor does not report the KDE stack"
 out=$(PATH="$STUBS:/usr/bin:/bin" bash "$PKGDIR/bin/mod-kdeconnect.sh" fix 2>&1); rc=$?
 [ "$rc" = "0" ] || fail "kdeconnect fix failed (rc=$rc): $out"
 [ -x "$HOME/.local/bin/kdeconnectd-wrapper" ] || fail "wrapper not installed"
