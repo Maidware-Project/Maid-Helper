@@ -83,6 +83,14 @@ before its verdict, so logs show the stack that produced the crash. no
 KDE Connect source patch is shipped; the wrapper is the only fix, so the
 next KDE Connect update cannot collide with a stale patch.
 
+the wrapper also fixes Android's remote filesystem. newer Android denies
+listing `/`, so KDE Connect's `sshfs ...:/` mount fails with
+`sshfs finished with exit code 1` even though `/storage/emulated/0` is
+readable. a small `sshfs` shim on the daemon's `PATH` rewrites only the
+bare root to `/storage/emulated/0`; a path the phone already supplied is
+left alone. "Browse this device" then opens shared storage, with no
+phone setting or app update.
+
 ## fully open source, floss compliant
 
 MIT, like the rest of the suite. non-free software never installs

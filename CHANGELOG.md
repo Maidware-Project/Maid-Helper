@@ -9,6 +9,12 @@
 - no KDE Connect source patch is shipped at all: the wrapper is the
   only fix, so a future KDE Connect update cannot conflict with a stale
   patch. the old RPM-style duplicate and the per-repo copies are gone.
+- Android remote filesystem: the wrapper puts a small `sshfs` shim on
+  the daemon's `PATH`. Android 11+ denies listing `/`, so KDE Connect's
+  `sshfs ...:/` failed with "sshfs finished with exit code 1" while
+  `/storage/emulated/0` was readable. the shim rewrites only the bare
+  root, leaving a path the phone already supplied alone; "Browse this
+  device" now opens shared storage.
 - the sibling installers no longer carry their own copies of the patch:
   one suite fix, one place. `maid-helper --only kdeconnect --fix` is the
   documented path (Maid BT, Maidshare, Maid AU, Maid Runner, Watcher

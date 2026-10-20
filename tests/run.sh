@@ -95,6 +95,23 @@ out=$(PATH="$STUBS:/usr/bin:/bin" bash "$PKGDIR/bin/mod-kdeconnect.sh" fix 2>&1)
 [ "$rc" = "0" ] || fail "kdeconnect fix failed (rc=$rc): $out"
 [ -x "$HOME/.local/bin/kdeconnectd-wrapper" ] || fail "wrapper not installed"
 grep -q 'QT_QPA_PLATFORM' "$HOME/.local/bin/kdeconnectd-wrapper" || fail "wrapper missing platform fallback"
+grep -q 'kdeconnect-bin' "$HOME/.local/bin/kdeconnectd-wrapper" || fail "wrapper missing sshfs shim path"
+[ -x "$HOME/.local/lib/maid-helper/kdeconnect-bin/sshfs" ] || fail "sshfs shim not installed"
+grep -q 'storage/emulated/0' "$HOME/.local/lib/maid-helper/kdeconnect-bin/sshfs" || fail "sshfs shim missing Android storage root"
+printf '#!/bin/sh\nprintf "%%s\\n" "$@" > /tmp/maidhelp-kc-sshfs.args\n' > /tmp/maidhelp-kc-bin/sshfs-real
+chmod +x /tmp/maidhelp-kc-bin/sshfs-real
+MAID_SSHFS_REAL=/tmp/maidhelp-kc-bin/sshfs-real \
+  "$HOME/.local/lib/maid-helper/kdeconnect-bin/sshfs" \
+  'kdeconnect@192.0.2.10:/' /tmp/maidhelp-kc-mnt -p 2222
+grep -Fqx 'kdeconnect@192.0.2.10:/storage/emulated/0' /tmp/maidhelp-kc-sshfs.args || fail "sshfs shim did not remap root"
+grep -Fqx '/tmp/maidhelp-kc-mnt' /tmp/maidhelp-kc-sshfs.args || fail "sshfs shim lost mountpoint"
+grep -Fqx -- '-p' /tmp/maidhelp-kc-sshfs.args || fail "sshfs shim lost options"
+rm -f /tmp/maidhelp-kc-sshfs.args
+MAID_SSHFS_REAL=/tmp/maidhelp-kc-bin/sshfs-real \
+  "$HOME/.local/lib/maid-helper/kdeconnect-bin/sshfs" \
+  'kdeconnect@192.0.2.10:/storage/emulated/0/Download' /tmp/maidhelp-kc-mnt
+grep -Fqx 'kdeconnect@192.0.2.10:/storage/emulated/0/Download' /tmp/maidhelp-kc-sshfs.args || fail "sshfs shim rewrote a supplied path"
+rm -f /tmp/maidhelp-kc-sshfs.args
 grep -Fqx "Exec=$HOME/.local/bin/kdeconnectd-wrapper" "$HOME/.local/share/dbus-1/services/org.kde.kdeconnect.service" || fail "dbus override missing"
 grep -Fqx "Exec=$HOME/.local/bin/kdeconnectd-wrapper" "$HOME/.config/autostart/org.kde.kdeconnect.daemon.desktop" || fail "autostart override missing"
 out=$(PATH="$STUBS:/usr/bin:/bin" bash "$PKGDIR/bin/mod-kdeconnect.sh" check 2>&1); rc=$?
