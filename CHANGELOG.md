@@ -13,6 +13,10 @@
   one suite fix, one place. `maid-helper --only kdeconnect --fix` is the
   documented path (Maid BT, Maidshare, Maid AU, Maid Runner, Watcher
   changelogs point here).
+- every installer now reports the detected Plasma, Frameworks, Qt and
+  KDE Connect versions; Maid BT skips its plasmoid on Plasma older than
+  6. the doctor prints the same line, so a bug report starts with the
+  stack that produced it.
 
 ## fixes: an honest codecs check, a window you can read
 

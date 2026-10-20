@@ -131,6 +131,11 @@ copy_one() {
   echo "installed $dest"
 }
 
+# shellcheck disable=SC1091
+. "$PKGDIR/bin/lib.sh"
+kde_env
+say "$(kde_env_line)"
+
 COPY_FAILED=0
 for f in maid-helper maid-helper-run lib.sh mod-codecs.sh mod-gpu.sh mod-print.sh mod-fonts.sh mod-suite.sh mod-gamepad.sh mod-flatpak.sh mod-firmware.sh mod-kdeconnect.sh; do
   copy_one "$PKGDIR/bin/$f" "$BINDIR/$f" || COPY_FAILED=1

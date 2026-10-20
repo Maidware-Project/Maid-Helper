@@ -76,9 +76,11 @@ maid-helper --only kdeconnect --fix
 ```
 
 it lives in `~/.local`, needs no root or package rebuild, and survives
-KDE Connect updates. takes effect at the next login. the upstream-style
-source patch is shipped under `patches/kdeconnect-26.08.2/` for distro
-use and attached to releases.
+KDE Connect updates. takes effect at the next login. the module also
+prints the detected Plasma, Frameworks, Qt and KDE Connect versions
+before its verdict, so logs show the stack that produced the crash. the
+upstream-style source patch is shipped under
+`patches/kdeconnect-26.08.2/` for distro use and attached to releases.
 
 ## fully open source, floss compliant
 

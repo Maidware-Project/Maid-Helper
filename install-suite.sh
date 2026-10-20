@@ -10,6 +10,7 @@
 # repos use hyphens (MHE/Maid-Helper is where Helper lives here).
 set -u
 set -o pipefail
+PKGDIR="$(cd "$(dirname "$0")" && pwd)"
 GITHUB="${MAID_GITHUB:-https://github.com/Maidware-Project}"
 if [ -n "${MAID_SUITE_BASE:-}" ]; then
   BASES="$MAID_SUITE_BASE"
@@ -31,6 +32,10 @@ for a in "$@"; do
 done
 
 say() { echo "==> $*"; }
+# shellcheck disable=SC1091
+. "$PKGDIR/bin/lib.sh"
+kde_env
+say "$(kde_env_line)"
 BASE=""
 [ -d "$BASES" ] && BASE="$BASES"
 [ -n "$BASE" ] || { say "no checkout base found ($BASES) - create one first"; exit 2; }

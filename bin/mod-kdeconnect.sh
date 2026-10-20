@@ -22,6 +22,9 @@ KDECONNECTD="${MAID_KDECONNECTD-$(command -v kdeconnectd 2>/dev/null || true)}"
 
 [ -n "$KDECONNECTD" ] || { echo "skip - KDE Connect not installed"; exit 0; }
 
+kde_env
+kde_env_line
+
 wrapper_ok() {
   [ -x "$WRAPPER" ] && grep -q 'QT_QPA_PLATFORM' "$WRAPPER" 2>/dev/null
 }
