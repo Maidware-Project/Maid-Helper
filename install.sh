@@ -131,6 +131,10 @@ copy_one() {
     say "backed up $dest"
   fi
   cat "$tmp" > "$dest"
+  # shell redirect resets the mode to umask defaults, so scripts would
+  # install non-executable every single run; mirror the source mode
+  # back on (plain-copy path; .desktop rewrites never need +x)
+  [ "$rewrite" = "0" ] && chmod --reference="$tmp" "$dest" 2>/dev/null || true
   rm -f "$tmp"
   echo "installed $dest"
 }
@@ -182,7 +186,8 @@ COPY_FAILED=0
 for f in maid-helper maid-helper-run maid-helper-launch lib.sh mod-codecs.sh mod-gpu.sh mod-print.sh mod-fonts.sh mod-suite.sh mod-gamepad.sh mod-flatpak.sh mod-firmware.sh mod-kdeconnect.sh mod-bluetooth.sh kde-env.sh; do
   copy_one "$PKGDIR/bin/$f" "$BINDIR/$f" || COPY_FAILED=1
 done
-[ "$CHECK" = "0" ] && chmod +x "$BINDIR"/maid-helper "$BINDIR"/maid-helper-run "$BINDIR"/maid-helper-launch 2>/dev/null || true
+[ "$CHECK" = "0" ] && chmod +x "$BINDIR"/maid-helper "$BINDIR"/maid-helper-run \
+  "$BINDIR"/lib.sh "$BINDIR"/mod-*.sh "$BINDIR"/kde-env.sh 2>/dev/null || true
 
 build_gui
 
