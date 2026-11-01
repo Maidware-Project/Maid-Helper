@@ -131,8 +131,20 @@ service_active() {
   systemctl is-active --quiet bluetooth 2>/dev/null
 }
 
+rfkill_bin() {
+  # openSUSE keeps rfkill in /usr/sbin, which is not on every user's
+  # PATH; the switcher scripts resolve the same fallbacks
+  local p
+  p="$(command -v rfkill 2>/dev/null)" && [ -n "$p" ] && { echo "$p"; return 0; }
+  [ -x /usr/sbin/rfkill ] && { echo /usr/sbin/rfkill; return 0; }
+  [ -x /sbin/rfkill ] && { echo /sbin/rfkill; return 0; }
+  return 1
+}
+
 rfkill_blocked() {
-  rfkill list bluetooth 2>/dev/null | grep -qE 'Soft blocked: yes|Hard blocked: yes'
+  local rb
+  rb=$(rfkill_bin) || return 1
+  "$rb" list bluetooth 2>/dev/null | grep -qiE 'Soft blocked: yes|Hard blocked: yes'
 }
 
 adapter_powered() {
@@ -144,7 +156,7 @@ check_stack() {
   if ! have bluetoothctl; then
     echo "NEEDS FIX - bluetoothctl missing (install bluez)"
     NEED=1
-  elif ! have rfkill; then
+  elif ! rfkill_bin >/dev/null 2>&1; then
     echo "NEEDS FIX - rfkill missing (install util-linux/rfkill)"
     NEED=1
   else
@@ -158,7 +170,9 @@ check_stack() {
     NEED=1
   fi
 
-  if rfkill_blocked; then
+  if ! rfkill_bin >/dev/null 2>&1; then
+    : # already reported above
+  elif rfkill_blocked; then
     echo "NEEDS FIX - the Bluetooth radio is blocked by rfkill"
     NEED=1
   else
@@ -376,8 +390,8 @@ do_fix() {
     sudo systemctl enable --now bluetooth 2>&1 | tail -n 2 || true
   fi
   if rfkill_blocked; then
-    echo "- unblocking the Bluetooth radio"
-    sudo rfkill unblock bluetooth 2>&1 || true
+    echo "- unblocking the Bluetooth radio (finds rfkill in /usr/sbin too)"
+    sudo "$(rfkill_bin 2>/dev/null || echo rfkill)" unblock bluetooth 2>&1 || true
   fi
   if have bluetoothctl && ! adapter_powered; then
     echo "- powering the Bluetooth adapter on"
@@ -493,7 +507,7 @@ do_report() {
     bash "$0" check 2>&1
     echo
     echo "== rfkill =="
-    rfkill list bluetooth 2>&1 | redact
+    "$(rfkill_bin 2>/dev/null || echo rfkill)" list bluetooth 2>&1 | redact
     echo
     echo "== bluetooth adapter =="
     bluetoothctl show 2>&1 | redact
