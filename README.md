@@ -109,7 +109,7 @@ phone setting or app update.
 
 ## fully open source, floss compliant
 
-MIT, like the rest of the suite. non-free software never installs
+GPL-3.0-or-later, like the rest of the suite (forkable, open source). non-free software never installs
 here, period - no proprietary GPU path exists in this tool, and the
 single exception (Microsoft fonts) installs **only** with your
 explicit yes: a prompt on interactive terminals, or `MSFONTS=1`.
@@ -160,4 +160,4 @@ bash install.sh --uninstall --purge    # everything out including the log
 
 ## License
 
-MIT - see LICENSE. a Maidware Project, Forkable open source tools served to help
+GPL-3.0-or-later — forkable and open source. See `LICENSE`. Part of the Maidware Project

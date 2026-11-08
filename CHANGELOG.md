@@ -1,5 +1,9 @@
 # changelog
 
+## unreleased
+
+- **relicensed to GPL-3.0-or-later** (forkable, open source). Rationale: keep improvements shared in the open — as WINE’s move from MIT to LGPL (2002) is often cited, “those who do not learn from history are doomed to repeat.” Third-party components retain their own licenses.
+
 ## native gui + bluetooth module
 
 - new window (Maidware theme): the whole kit - module list, check,
