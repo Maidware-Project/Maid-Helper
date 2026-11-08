@@ -4,6 +4,9 @@ command-line helper. first-aid kit for small linux breakage. checks common issue
 ## quick start
 
 ```sh
+# one line, straight from GitHub (then --check explains what --fix would change):
+bash <(curl -fsSL https://raw.githubusercontent.com/Maidware-Project/Maid-Helper/main/install.sh)
+
 bash install.sh            # copy + launcher
 maid-helper --check        # read-only report, change nothing
 maid-helper --fix          # apply the safe fixes (sudo inside)
